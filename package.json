@@ -1,10 +1,11 @@
 {
   "name": "myanmar-forge-engine",
-  "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@octokit/rest": "^20.1.1",
     "@google/generative-ai": "^0.3.0",
-    "node-fetch": "^3.3.2"
+    "@octokit/rest": "^20.0.0",
+    "@capacitor/core": "^5.0.0",
+    "@capacitor/cli": "^5.0.0",
+    "@capacitor/android": "^5.0.0"
   }
 }
