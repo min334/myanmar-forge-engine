@@ -1,11 +1,11 @@
 name: Myanmar Forge Engine Build
 on:
-  workflow_dispatch: # ဒါက ကိုယ်တိုင် ခလုတ်နှိပ်ပြီး ခိုင်းလို့ရအောင် လုပ်တာပါ
+  workflow_dispatch:
     inputs:
       app_idea:
-        description: 'ဘယ်လို App မျိုး ဆောက်ချင်တာလဲ ပြောပါ'
+        description: 'What app do you want to build?'
         required: true
-        default: 'Simple Gold Calculator App'
+        default: 'Simple Gold Calculator'
 
 jobs:
   forge:
@@ -13,21 +13,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
-      - name: Setup Node.js 22
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: 20
           
-      - name: Setup Java 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
       - name: Install Dependencies
         run: npm install
-
+        
       - name: Run Forge Engine
+        # ဒီနေရာမှာ Key တွေကို index.js ဆီ တိုက်ရိုက် လှမ်းချိတ်ပေးထားပါတယ်
         run: node index.js "${{ github.event.inputs.app_idea }}"
         env:
           MY_GITHUB_TOKEN: ${{ secrets.MY_FORGE_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
