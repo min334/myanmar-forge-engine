@@ -3,7 +3,7 @@ export async function getActiveModel(apiKey) {
 
     return {
         generateContent: async (prompt) => {
-            // v1beta version ကို URL မှာ အသေထည့်ထားပါတယ်
+            // SDK ကို မသုံးဘဲ URL နဲ့ တိုက်ရိုက်ခေါ်တဲ့ နည်းလမ်းဖြစ်ပါတယ်
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
             
             const response = await fetch(url, {
@@ -17,7 +17,8 @@ export async function getActiveModel(apiKey) {
             const data = await response.json();
             
             if (!response.ok) {
-                throw new Error(data.error?.message || "Google API Error");
+                // Error message ကို ပိုမိုရှင်းလင်းစွာ ပြဖို့ logic
+                throw new Error(data.error?.message || "Google API Direct Connection Failed");
             }
 
             return {
