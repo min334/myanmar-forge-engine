@@ -1,34 +1,42 @@
 import { Octokit } from "@octokit/rest";
+import fetch from "node-fetch";
 
-const appIdea = process.argv[2] || "Simple App";
-const token = process.env.MY_GITHUB_TOKEN;
-const octokit = new Octokit({ auth: token });
+const appIdea = process.argv[2] || "Simple Gold Calculator App";
+const githubToken = process.env.MY_GITHUB_TOKEN;
+const geminiKey = process.env.GEMINI_API_KEY;
+
+const octokit = new Octokit({ auth: githubToken });
+
+async function getAICode(prompt) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+    const response = await fetch(url, {
+        method: "POST",
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: `Write only the HTML code (including Tailwind CSS) for this app idea: ${prompt}. Do not include markdown formatting or explanations.` }] }]
+        })
+    });
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text.replace(/```html|```/g, "").trim();
+}
 
 async function forge() {
-    console.log(`🚀 Forging started for: ${appIdea}`);
-    
+    console.log(`🤖 AI is thinking about: ${appIdea}`);
     try {
-        // ၁။ လက်ရှိ User ရဲ့ နာမည်ကို ယူမယ်
         const { data: user } = await octokit.users.getAuthenticated();
-        console.log(`👤 Authenticated as: ${user.login}`);
+        
+        // AI ဆီကနေ Code တောင်းခြင်း
+        const aiGeneratedCode = await getAICode(appIdea);
 
-        // ၂။ ဒီနေရာမှာ AI ဆီက Code တောင်းတဲ့အပိုင်း လာပါမယ် (လောလောဆယ် Sample Code ထည့်ထားမယ်)
-        const appCode = `
-            <h1>Success!</h1>
-            <p>This App was forged by Myanmar Forge Engine based on: ${appIdea}</p>
-        `;
-
-        // ၃။ Target ဖိုင်ကို လက်ရှိ Repo ထဲမှာပဲ 'output-app.html' အနေနဲ့ အရင်စမ်းဆောက်ကြည့်မယ်
+        // ရလာတဲ့ Code ကို 'forged-app.html' အဖြစ် သိမ်းခြင်း
         await octokit.repos.createOrUpdateFileContents({
             owner: user.login,
             repo: 'myanmar-forge-engine',
-            path: 'output-app.html',
-            message: `Forged: ${appIdea}`,
-            content: Buffer.from(appCode).toString('base64'),
+            path: 'forged-app.html',
+            message: `AI Forged: ${appIdea}`,
+            content: Buffer.from(aiGeneratedCode).toString('base64'),
         });
 
-        console.log("✅ New App forged successfully! Check 'output-app.html' in your repo.");
-        
+        console.log("✅ AI has successfully forged your app into 'forged-app.html'!");
     } catch (error) {
         console.error("❌ Forge Error:", error.message);
     }
