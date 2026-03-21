@@ -20,17 +20,23 @@ jobs:
         run: npm install
 
       - name: Run AI Engine
+        id: ai_step
         run: node index.js "${{ github.event.inputs.app_idea }}"
         env:
           MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Prepare Android Build
+        # index.html ရှိမှသာ ဆက်လုပ်မယ့် logic
         run: |
-          mkdir -p dist
-          cp index.html dist/
-          npx cap add android
-          npx cap sync android
+          if [ -f index.html ]; then
+            mkdir -p dist
+            cp index.html dist/
+            echo "✅ index.html found. Proceeding to build..."
+          else
+            echo "🚨 index.html was not generated. Build aborted."
+            exit 1
+          fi
 
       - name: Setup Java
         uses: actions/setup-java@v3
@@ -40,6 +46,8 @@ jobs:
 
       - name: Build APK
         run: |
+          npx cap add android || true
+          npx cap sync android
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
