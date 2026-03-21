@@ -1,0 +1,33 @@
+name: Myanmar Forge Engine Build
+on:
+  workflow_dispatch: # ဒါက ကိုယ်တိုင် ခလုတ်နှိပ်ပြီး ခိုင်းလို့ရအောင် လုပ်တာပါ
+    inputs:
+      app_idea:
+        description: 'ဘယ်လို App မျိုး ဆောက်ချင်တာလဲ ပြောပါ'
+        required: true
+        default: 'Simple Gold Calculator App'
+
+jobs:
+  forge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Forge Engine
+        run: node index.js "${{ github.event.inputs.app_idea }}"
+        env:
+          MY_GITHUB_TOKEN: ${{ secrets.MY_FORGE_TOKEN }}
