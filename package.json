@@ -1,15 +1,10 @@
 {
   "name": "myanmar-forge-engine",
   "version": "1.0.0",
-  "description": "Autonomous AI App Factory Engine",
-  "main": "index.js",
   "type": "module",
-  "scripts": {
-    "start": "node index.js"
-  },
   "dependencies": {
     "@octokit/rest": "^20.1.1",
-    "dotenv": "^16.4.5",
+    "@google/generative-ai": "^0.3.0",
     "node-fetch": "^3.3.2"
   }
 }
