@@ -7,16 +7,9 @@ const geminiKey = process.env.GEMINI_API_KEY;
 
 const octokit = new Octokit({ auth: githubToken });
 
-// Key ရှိမရှိ အရင်စစ်မယ်
-console.log("Checking Gemini Key Status...");
-if (!geminiKey) {
-    console.error("❌ ERROR: GEMINI_API_KEY is missing from environment variables!");
-} else {
-    console.log(`✅ Key found (Length: ${geminiKey.length})`);
-}
-
 async function getAICode(prompt) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+    // ဒီနေရာမှာ v1beta ကို v1 လို့ ပြောင်းထားပါတယ်
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
     
     const response = await fetch(url, {
         method: "POST",
