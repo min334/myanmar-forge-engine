@@ -5,6 +5,11 @@ const appIdea = process.argv[2] || "Simple Gold Calculator App";
 const githubToken = process.env.MY_GITHUB_TOKEN;
 const geminiKey = process.env.GEMINI_API_KEY;
 
+const geminiKey = process.env.GEMINI_API_KEY;
+
+// အောက်က စာကြောင်းလေး အသစ်ထည့်ပါ
+console.log("Checking Gemini Key:", geminiKey ? "Found (Length: " + geminiKey.length + ")" : "NOT FOUND! Check your GitHub Secrets.");
+
 const octokit = new Octokit({ auth: githubToken });
 
 async function getAICode(prompt) {
