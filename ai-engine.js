@@ -1,29 +1,31 @@
 export async function getActiveModel(apiKey) {
     if (!apiKey) throw new Error("API Key is missing in Secrets!");
 
-    // Strategy List: ဒီ (၃) မျိုးထဲက အလုပ်လုပ်တာ တစ်ခုကို ရအောင် ရှာမယ်
+    // စမ်းသပ်မယ့် နည်းလမ်း (၆) မျိုးစလုံးကို စာရင်းသွင်းထားပါတယ်
     const strategies = [
-        { ver: "v1beta", name: "gemini-1.5-flash" },
-        { ver: "v1", name: "gemini-1.5-flash" },
-        { ver: "v1beta", name: "gemini-pro" }
+        { ver: "v1beta", model: "gemini-1.5-flash" },
+        { ver: "v1", model: "gemini-1.5-flash" },
+        { ver: "v1beta", model: "gemini-1.5-pro" },
+        { ver: "v1", model: "gemini-1.5-pro" },
+        { ver: "v1beta", model: "gemini-pro" },
+        { ver: "v1", model: "gemini-pro" }
     ];
 
-    console.log("🛠️ Initializing Multi-Strategy Recovery...");
+    console.log("🛠️ Starting Full-Spectrum Recovery Mode...");
 
     for (const s of strategies) {
         try {
-            console.log(`🔍 Trying Strategy: ${s.ver} with ${s.name}...`);
-            const url = `https://generativelanguage.googleapis.com/${s.ver}/models/${s.name}:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/${s.ver}/models/${s.model}:generateContent?key=${apiKey}`;
             
-            // တစ်ခါတည်း စမ်းသပ်ကြည့်မယ်
-            const testResponse = await fetch(url, {
+            // Connection ကို အရင်စမ်းမယ်
+            const check = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
             });
 
-            if (testResponse.ok) {
-                console.log(`✅ Strategy Success: ${s.ver}/${s.name} is working!`);
+            if (check.ok) {
+                console.log(`✅ SUCCESS! Using Strategy: ${s.ver}/${s.model}`);
                 return {
                     generateContent: async (prompt) => {
                         const res = await fetch(url, {
@@ -37,8 +39,8 @@ export async function getActiveModel(apiKey) {
                 };
             }
         } catch (e) {
-            console.log(`❌ ${s.ver}/${s.name} failed, skipping...`);
+            console.log(`❌ ${s.ver}/${s.model} failed, trying next...`);
         }
     }
-    throw new Error("All strategies failed. Please check if your Gemini API Key is truly active.");
+    throw new Error("CRITICAL: All Gemini API strategies failed. Please verify Key in AI Studio.");
 }
