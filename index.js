@@ -14,22 +14,31 @@ async function getAICode(prompt) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            contents: [{ parts: [{ text: `Generate a single HTML file with CSS and JS for: ${prompt}. Return ONLY the HTML code, no markdown, no explanations.` }] }]
+            contents: [{ parts: [{ text: `Generate a single HTML file with CSS and JS for: ${prompt}. Return ONLY raw HTML code, no markdown code blocks.` }] }]
         })
     });
 
     const data = await response.json();
-    
+
+    // Error ရှာဖွေရေးအပိုင်း (ဒီနေရာက အရေးကြီးပါတယ်)
+    if (data.error) {
+        console.error("❌ Gemini API Error Details:");
+        console.error(`Status: ${data.error.status}`);
+        console.error(`Message: ${data.error.message}`);
+        throw new Error(`Gemini API failed: ${data.error.message}`);
+    }
+
     if (data.candidates && data.candidates[0] && data.candidates[0].content) {
         let code = data.candidates[0].content.parts[0].text;
         return code.replace(/```html|```/g, "").trim();
     } else {
-        throw new Error("AI response format error: " + JSON.stringify(data));
+        console.log("Full AI Response:", JSON.stringify(data, null, 2));
+        throw new Error("Unexpected Response Format from Gemini");
     }
 }
 
 async function forge() {
-    console.log(`🚀 Forging started for: ${appIdea}`);
+    console.log(`🚀 Starting Diagnostic Forge for: ${appIdea}`);
     try {
         const { data: user } = await octokit.users.getAuthenticated();
         const aiGeneratedCode = await getAICode(appIdea);
@@ -38,12 +47,13 @@ async function forge() {
             owner: user.login,
             repo: 'my-forged-app', 
             path: 'index.html',
-            message: `Update App: ${appIdea}`,
+            message: `Diagnostic Build: ${appIdea}`,
             content: Buffer.from(aiGeneratedCode).toString('base64'),
         });
-        console.log("✅ Code sent to my-forged-app!");
+        console.log("✅ Success! Code sent to my-forged-app.");
     } catch (error) {
-        console.error("❌ Forge Error:", error.message);
+        console.error("🚨 ENGINE ERROR REPORT:");
+        console.error(error.message);
     }
 }
 forge();
