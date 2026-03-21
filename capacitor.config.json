@@ -1,0 +1,6 @@
+{
+  "appId": "com.minthitsar.goldcalc",
+  "appName": "Golden Myanmar Calculator",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
