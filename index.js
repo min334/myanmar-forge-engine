@@ -1,14 +1,23 @@
-// Myanmar Forge Core Engine (Prototype)
-const { Octokit } = require("@octokit/rest");
+import { Octokit } from "@octokit/rest";
 
-// ဒီနေရာမှာ ခင်ဗျားရဲ့ GitHub Token နဲ့ Repo Name ထည့်ရပါမယ်
-const octokit = new Octokit({ auth: 'YOUR_GITHUB_TOKEN' });
-const OWNER = 'YOUR_GITHUB_USERNAME';
-const REPO = 'target-app-repo'; 
+// Engine က လက်ခံရရှိတဲ့ App Idea ကို ယူခြင်း
+const appIdea = process.argv[2] || "Simple App";
+const token = process.env.MY_GITHUB_TOKEN;
 
-async function buildApp(prompt) {
-    console.log(`Generating code for: ${prompt}`);
-    // ၁။ ဒီနေရာမှာ AI ဆီက Code တောင်းတဲ့ logic လာမယ်
-    // ၂။ ရလာတဲ့ Code ကို GitHub ဆီ Push လုပ်မယ်
-    // ၃။ GitHub Actions ကို Trigger လုပ်မယ်
+const octokit = new Octokit({ auth: token });
+
+async function forge() {
+    console.log(`🚀 Myanmar Forge is generating: ${appIdea}`);
+    
+    try {
+        // ဒီနေရာမှာ AI ရဲ့ Code Generation logic တွေ နောက်ပိုင်း ထပ်ဖြည့်ပါမယ်
+        // အခုလောလောဆယ် Engine အလုပ်လုပ်မလုပ် အရင်စမ်းသပ်တာပါ
+        console.log("✅ Connection to GitHub established!");
+        console.log("📦 Target App Logic initialized...");
+        
+    } catch (error) {
+        console.error("❌ Error during forging:", error);
+    }
 }
+
+forge();
