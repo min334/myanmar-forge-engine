@@ -3,12 +3,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 export async function getActiveModel(apiKey) {
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // v1 နဲ့ v1beta နှစ်ခုလုံးကို endpoint အနေနဲ့ စမ်းစစ်ဖို့ logic
     const baseUrl = "https://generativelanguage.googleapis.com";
-    const versions = ["v1beta", "v1"];
+    
+    // ဒီနေရာမှာ v1 ကို ဖြုတ်ပြီး v1beta တစ်ခုတည်းပဲ ထားလိုက်ပါ
+    // Request အရေအတွက် လျှော့ချဖို့အတွက်ပါ
+    const versions = ["v1beta"]; 
 
     console.log("🔍 Scanning for available models in your API Key...");
-
+    // ... ကျန်တဲ့ code တွေက အတူတူပါပဲ ...
     for (const ver of versions) {
         try {
             const response = await fetch(`${baseUrl}/${ver}/models?key=${apiKey}`);
