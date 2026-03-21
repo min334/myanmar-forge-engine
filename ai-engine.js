@@ -1,36 +1,18 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function getActiveModel(apiKey) {
+    // API Key ရှိမရှိ အရင်စစ်မယ်
+    if (!apiKey) throw new Error("API Key is missing in Secrets!");
+
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    const baseUrl = "https://generativelanguage.googleapis.com";
-    
-    // ဒီနေရာမှာ v1 ကို ဖြုတ်ပြီး v1beta တစ်ခုတည်းပဲ ထားလိုက်ပါ
-    // Request အရေအတွက် လျှော့ချဖို့အတွက်ပါ
-    const versions = ["v1beta"]; 
-
-    console.log("🔍 Scanning for available models in your API Key...");
-    // ... ကျန်တဲ့ code တွေက အတူတူပါပဲ ...
-    for (const ver of versions) {
-        try {
-            const response = await fetch(`${baseUrl}/${ver}/models?key=${apiKey}`);
-            const data = await response.json();
-
-            if (data.models) {
-                // generateContent ရတဲ့ model ကို စစ်ထုတ်မယ်
-                const target = data.models.find(m => 
-                    m.supportedGenerationMethods.includes("generateContent") && 
-                    (m.name.includes("flash") || m.name.includes("pro"))
-                );
-
-                if (target) {
-                    console.log(`✅ Model Found in ${ver}: ${target.name}`);
-                    return genAI.getGenerativeModel({ model: target.name.replace("models/", "") });
-                }
-            }
-        } catch (e) {
-            console.log(`⚠️ ${ver} check failed, trying next...`);
-        }
+    try {
+        console.log("🚀 Forge Engine: Connecting to Gemini 1.5 Flash directly...");
+        // Scan ဖတ်မနေတော့ဘဲ တိုက်ရိုက် Model ကို ခေါ်လိုက်ပါမယ်
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        return model;
+    } catch (e) {
+        console.error("🚨 Connection Error:", e.message);
+        throw new Error("Could not initialize Gemini model.");
     }
-    throw new Error("No active generative models found in this API Key.");
 }
