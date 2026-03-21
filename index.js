@@ -6,19 +6,14 @@ const githubToken = process.env.MY_GITHUB_TOKEN;
 const geminiKey = process.env.GEMINI_API_KEY;
 
 const octokit = new Octokit({ auth: githubToken });
-
-// API Version ကို v1beta လို့ အတိအကျ သတ်မှတ်ခြင်း
 const genAI = new GoogleGenerativeAI(geminiKey);
 
 async function forge() {
     try {
-        console.log("🚀 Forge Engine: Targetting Gemini 1.5 Flash (v1beta)...");
+        console.log("🚀 Forge Engine: Using standard Gemini 1.5 Flash naming...");
         
-        // v1beta version ကို သုံးပြီး model ခေါ်ယူခြင်း
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
-            apiVersion: "v1beta" 
-        });
+        // နာမည်ကို models/ ထည့်ပြီး အပြည့်အစုံ ခေါ်ကြည့်ပါမယ်
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         
         const prompt = `Generate a single HTML file with CSS and JS for: ${appIdea}. Return ONLY the raw code.`;
         
@@ -36,10 +31,11 @@ async function forge() {
             content: Buffer.from(code).toString('base64'),
         });
         
-        console.log("✅ SUCCESS! Check your 'my-forged-app' repository now.");
+        console.log("✅ SUCCESS! Your app is now ready in 'my-forged-app' repo.");
     } catch (e) {
         console.error("🚨 ENGINE ERROR:", e.message);
-        console.log("💡 Suggestion: If 404 persists, we will switch to v1 names.");
+        // အကယ်၍ ထပ်ပြီး error တက်ခဲ့ရင် backup နာမည်နဲ့ စမ်းပါမယ်
+        console.log("💡 Tip: Re-running in 1 minute might solve transient 429 errors.");
     }
 }
 
