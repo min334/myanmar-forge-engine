@@ -1,32 +1,36 @@
-import fs from 'fs';
+import { getActiveModel } from "./ai-engine.js";
 
 async function forge() {
-    console.log("🚀 Running Emergency Manual Build Mode...");
+    const geminiKey = process.env.GEMINI_API_KEY;
     
-    // AI မလိုဘဲ HTML code ကို တိုက်ရိုက် ရေးခိုင်းလိုက်တာပါ
-    const manualHTML = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Forge Test App</title>
-        <style>
-            body { font-family: sans-serif; text-align: center; padding: 50px; background: #eef2f3; }
-            .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-            h1 { color: #2c3e50; }
-        </style>
-    </head>
-    <body>
-        <div class="box">
-            <h1>🇲🇲 Myanmar Forge Engine</h1>
-            <p>✅ APK Build Process တကယ်အလုပ်လုပ်ကြောင်း စမ်းသပ်ခြင်း ဖြစ်ပါတယ်။</p>
-            <p>ဒီ App ကို ဖုန်းမှာ မြင်ရပြီဆိုရင် ကျန်တာ အကုန် အဆင်ပြေသွားပါပြီ!</p>
-        </div>
-    </body>
-    </html>`;
+    console.log("🔍 Testing your API Key now...");
+    
+    if (!geminiKey) {
+        console.error("🚨 Error: GEMINI_API_KEY is NOT found in GitHub Secrets!");
+        process.exit(1);
+    }
 
-    fs.writeFileSync('index.html', manualHTML);
-    console.log("✅ index.html created successfully without AI.");
-    console.log("🚀 Ready for Android Build!");
+    try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: "Hello" }] }] })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log("✅ API Key is PERFECT! It is working now.");
+        } else {
+            // ဒီနေရာမှာ ဘာကြောင့် ပျက်တာလဲဆိုတာ အဖြေအတိအကျ ပေါ်လာပါလိမ့်မယ်
+            console.error("❌ Google API Error Message:", data.error.message);
+            console.error("❌ Error Status:", data.error.status);
+            process.exit(1);
+        }
+    } catch (e) {
+        console.error("🚨 Connection Error:", e.message);
+        process.exit(1);
+    }
 }
-
 forge();
