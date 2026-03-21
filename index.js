@@ -8,70 +8,74 @@ const geminiKey = process.env.GEMINI_API_KEY;
 const octokit = new Octokit({ auth: githubToken });
 const genAI = new GoogleGenerativeAI(geminiKey);
 
-async function listAndFindModel() {
-    console.log("📂 Fetching available Gemini models...");
+async function scanAllModels() {
+    console.log("📂 Scanning for ALL Flash and Preview models...");
     
-    try {
-        // API ဆီကနေ ရနိုင်တဲ့ model စာရင်းကို တောင်းဆိုခြင်း
-        // မှတ်ချက် - SDK version အလိုက် listModels() သို့မဟုတ် အလားတူ function သုံးရပါမယ်
-        // လက်ရှိတွင် common models ကို diagnostic အနေနဲ့ အရင်စစ်ဆေးပါမယ်
-        // Preview model တွေနဲ့ နောက်ဆုံးထွက် model နာမည်များ
-const models = [
-    "gemini-1.5-flash-latest",     // Flash နောက်ဆုံး version
-    "gemini-2.0-flash-exp",        // Gemini 2.0 Flash Experimental (Preview)
-    "gemini-1.5-flash-8b-exp-0827", // Flash 8B Preview
-    "gemini-1.5-flash-002",        // Flash Stable New Version
-    "gemini-pro-experimental"      // Pro Preview
-];
-        
-        let selectedModel = null;
+    // ခင်ဗျား စမ်းချင်တဲ့ Preview Model နာမည်တွေ အကုန်ဒီထဲမှာပါပါတယ်
+    const modelsToScan = [
+        "gemini-2.0-flash-exp",        // Gemini 2.0 Flash (Preview)
+        "gemini-1.5-flash-latest",     // 1.5 Flash (Latest)
+        "gemini-1.5-flash-8b-exp-0827",// Flash 8B (Preview)
+        "gemini-1.5-flash-002",        // 1.5 Flash (New Stable)
+        "gemini-1.5-pro-latest",       // 1.5 Pro (Latest)
+        "gemini-pro"                   // Pro (Standard)
+    ];
+    
+    let activeModel = null;
+    let activeModelName = "";
 
-        for (const m of models) {
-            try {
-                const model = genAI.getGenerativeModel({ model: m });
-                await model.generateContent("ping"); // Model အလုပ်လုပ်လား စမ်းသပ်ခြင်း
-                console.log(`✅ Model Found and Active: ${m}`);
-                selectedModel = model;
-                break; // အလုပ်လုပ်တဲ့ တစ်ခုတွေ့တာနဲ့ ရပ်မယ်
-            } catch (err) {
-                console.log(`❌ Model ${m} is not available.`);
-            }
+    for (const m of modelsToScan) {
+        try {
+            console.log(`🔍 Testing: ${m}...`);
+            const model = genAI.getGenerativeModel({ model: m });
+            
+            // Model တကယ် အသက်ဝင်လား သိရအောင် response တောင်းကြည့်မယ်
+            const result = await model.generateContent("ping");
+            await result.response;
+            
+            console.log(`✅ FOUND ACTIVE MODEL: ${m}`);
+            activeModel = model;
+            activeModelName = m;
+            break; // တစ်ခု အောင်မြင်တာနဲ့ ရပ်မယ်
+        } catch (err) {
+            console.log(`❌ ${m} is not available: ${err.message}`);
+            // Error တက်လည်း နောက် model တစ်ခုကို ဆက်စစ်မယ်
         }
-
-        if (!selectedModel) throw new Error("No active models found.");
-        return selectedModel;
-
-    } catch (error) {
-        throw new Error("Failed to list or connect to models: " + error.message);
     }
+
+    if (!activeModel) {
+        throw new Error("No active Gemini models found. Please check your API Key and regional availability.");
+    }
+    return { model: activeModel, name: activeModelName };
 }
 
 async function forge() {
-    console.log(`🚀 Smart Diagnostic Forge: ${appIdea}`);
+    console.log(`🚀 Starting Smart Forge for: ${appIdea}`);
     try {
         const { data: user } = await octokit.users.getAuthenticated();
         
-        // Model စာရင်းထဲမှ အလုပ်လုပ်မည့်ကောင်ကို ရွေးချယ်ခြင်း
-        const activeModel = await listAndFindModel();
+        // ၁။ အလုပ်လုပ်တဲ့ model ကို အရင်ရှာမယ်
+        const { model: activeModel, name: modelName } = await scanAllModels();
         
-        console.log("🎨 Generating Application Code...");
-        const fullPrompt = `Generate a single HTML file with CSS and JS for: ${appIdea}. Return ONLY raw HTML.`;
-        
+        // ၂။ အဲဒီ model နဲ့ App Code ကို ရေးခိုင်းမယ်
+        console.log(`🤖 AI (${modelName}) is writing your app code...`);
+        const fullPrompt = `Generate a single HTML file with CSS and JS for: ${appIdea}. Return ONLY raw HTML code, no markdown blocks.`;
         const result = await activeModel.generateContent(fullPrompt);
         const response = await result.response;
         let code = response.text().replace(/```html|```/g, "").trim();
 
+        // ၃။ ရလာတဲ့ code ကို Repo ဆီ ပို့မယ်
         await octokit.repos.createOrUpdateFileContents({
             owner: user.login,
             repo: 'my-forged-app', 
             path: 'index.html',
-            message: `Build with Auto-selected Model: ${appIdea}`,
+            message: `Engine Build via ${modelName}: ${appIdea}`,
             content: Buffer.from(code).toString('base64'),
         });
         
-        console.log("🎉 SUCCESS! Your app code has been forged and sent to 'my-forged-app'.");
+        console.log(`🎉 SUCCESS! App created using ${modelName}. Check 'my-forged-app' repo.`);
     } catch (error) {
-        console.error("🚨 DIAGNOSTIC ERROR:");
+        console.error("🚨 ENGINE ERROR REPORT:");
         console.error(error.message);
     }
 }
