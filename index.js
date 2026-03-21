@@ -1,21 +1,21 @@
 import { Octokit } from "@octokit/rest";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getActiveModel } from "./ai-engine.js";
 
 const appIdea = process.argv[2] || "Simple Gold Calculator App";
 const githubToken = process.env.MY_GITHUB_TOKEN;
 const geminiKey = process.env.GEMINI_API_KEY;
 
 const octokit = new Octokit({ auth: githubToken });
-const genAI = new GoogleGenerativeAI(geminiKey);
 
 async function forge() {
     try {
-        console.log("🚀 Forge Engine: Using standard Gemini 1.5 Flash naming...");
+        console.log("🚀 Starting Myanmar Forge Engine...");
         
-        // နာမည်ကို models/ ထည့်ပြီး အပြည့်အစုံ ခေါ်ကြည့်ပါမယ်
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // AI Engine ဆီကနေ အလုပ်လုပ်တဲ့ model ကို အရင်တောင်းမယ်
+        const model = await getActiveModel(geminiKey);
         
-        const prompt = `Generate a single HTML file with CSS and JS for: ${appIdea}. Return ONLY the raw code.`;
+        console.log("🤖 Generating App Code...");
+        const prompt = `Create a single file HTML app for: ${appIdea}. Include CSS and JS. return ONLY the code.`;
         
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -31,11 +31,9 @@ async function forge() {
             content: Buffer.from(code).toString('base64'),
         });
         
-        console.log("✅ SUCCESS! Your app is now ready in 'my-forged-app' repo.");
+        console.log("🎉 SUCCESS! Check your 'my-forged-app' repo.");
     } catch (e) {
-        console.error("🚨 ENGINE ERROR:", e.message);
-        // အကယ်၍ ထပ်ပြီး error တက်ခဲ့ရင် backup နာမည်နဲ့ စမ်းပါမယ်
-        console.log("💡 Tip: Re-running in 1 minute might solve transient 429 errors.");
+        console.error("🚨 CRITICAL ERROR:", e.message);
     }
 }
 
