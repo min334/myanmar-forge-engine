@@ -1,11 +1,11 @@
 export async function getActiveModel(apiKey) {
     if (!apiKey) throw new Error("API Key is missing in Secrets!");
 
-    console.log("🔍 Scanning for ALL available generative models...");
+    console.log("🔍 Scanning for any available generative models...");
 
     try {
-        // ၁။ အရင်ဆုံး သုံးလို့ရသမျှ Model List ကို Google ဆီက တောင်းမယ်
-        const listUrl = `https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`;
+        // ၁။ သုံးလို့ရသမျှ Model တွေရဲ့ List ကို အရင်တောင်းမယ်
+        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
         const listResponse = await fetch(listUrl);
         const listData = await listResponse.json();
 
@@ -13,18 +13,18 @@ export async function getActiveModel(apiKey) {
             throw new Error(listData.error?.message || "Failed to fetch model list");
         }
 
-        // ၂။ "generateContent" လုပ်နိုင်တဲ့ model တွေကိုပဲ သီးသန့်စစ်ထုတ်မယ်
+        // ၂။ generateContent လုပ်လို့ရမယ့် model တွေကိုပဲ စစ်ထုတ်ယူမယ်
         const availableModels = listData.models
             .filter(m => m.supportedGenerationMethods.includes("generateContent"))
             .map(m => m.name);
 
-        console.log(`📋 Found ${availableModels.length} potential models.`);
+        console.log(`📋 Found ${availableModels.length} potential models on your account.`);
 
-        // ၃။ အလုပ်လုပ်တဲ့ model တွေ့တဲ့အထိ တစ်ခုချင်းစီ စမ်းမယ်
-        for (const modelName of availableModels) {
+        // ၃။ အလုပ်လုပ်တဲ့ model တွေ့တဲ့အထိ တစ်ခုချင်းစီ စမ်းသပ်မယ်
+        for (const modelPath of availableModels) {
             try {
-                console.log(`🧪 Testing: ${modelName}...`);
-                const testUrl = `https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${apiKey}`;
+                console.log(`🧪 Testing: ${modelPath}...`);
+                const testUrl = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${apiKey}`;
                 
                 const testRes = await fetch(testUrl, {
                     method: 'POST',
@@ -33,9 +33,8 @@ export async function getActiveModel(apiKey) {
                 });
 
                 if (testRes.ok) {
-                    console.log(`✅ Success! Active Model found: ${modelName}`);
+                    console.log(`✅ Success! Active Model found and ready: ${modelPath}`);
                     
-                    // အလုပ်လုပ်တဲ့ model ကို return ပြန်ပေးမယ်
                     return {
                         generateContent: async (prompt) => {
                             const res = await fetch(testUrl, {
@@ -49,12 +48,12 @@ export async function getActiveModel(apiKey) {
                     };
                 }
             } catch (err) {
-                continue; // fail ရင် နောက်တစ်ခု ထပ်စမ်းမယ်
+                continue; // fail ရင် နောက်တစ်ခုကို ဆက်စမ်းမယ်
             }
         }
     } catch (e) {
         console.error("🚨 Discovery Error:", e.message);
     }
     
-    throw new Error("Could not find any active generative model in this API Key.");
+    throw new Error("Could not find any active model. Please check if your API Key is restricted.");
 }
