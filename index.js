@@ -12,32 +12,30 @@ async function getAICode(prompt) {
     const response = await fetch(url, {
         method: "POST",
         body: JSON.stringify({
-            contents: [{ parts: [{ text: `Write only the HTML code (including Tailwind CSS and JavaScript logic) for a professional mobile-friendly app: ${prompt}. Do not include markdown formatting or explanations. Focus on Myanmar gold units.` }] }]
+            contents: [{ parts: [{ text: `Generate a single HTML file for: ${prompt}. Use Tailwind CSS. Return ONLY raw HTML code without markdown code blocks.` }] }]
         })
     });
     const data = await response.json();
-    return data.candidates[0].content.parts[0].text.replace(/```html|```/g, "").trim();
+    let code = data.candidates[0].content.parts[0].text;
+    return code.replace(/```html|```/g, "").trim();
 }
 
 async function forge() {
-    console.log(`🤖 AI is forging for new repo: ${appIdea}`);
     try {
         const { data: user } = await octokit.users.getAuthenticated();
         const aiGeneratedCode = await getAICode(appIdea);
 
-        // အရေးကြီးဆုံးအချက် - Repo နာမည်ကို 'my-forged-app' (သို့) သင်ဆောက်ထားတဲ့ Repo နာမည် ပြောင်းပေးပါ
+        // Repo အသစ်ထဲကို ဖိုင်သွားရေးခြင်း
         await octokit.repos.createOrUpdateFileContents({
             owner: user.login,
             repo: 'my-forged-app', 
             path: 'index.html',
-            message: `Auto Forged: ${appIdea}`,
+            message: `Update App: ${appIdea}`,
             content: Buffer.from(aiGeneratedCode).toString('base64'),
         });
-
-        console.log("✅ Code sent to your product repository!");
+        console.log("✅ Code sent successfully!");
     } catch (error) {
-        console.error("❌ Forge Error:", error.message);
+        console.error("❌ Error:", error.message);
     }
 }
-
 forge();
