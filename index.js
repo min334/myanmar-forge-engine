@@ -1,67 +1,32 @@
-import { Octokit } from "@octokit/rest";
-import { getActiveModel } from "./ai-engine.js";
 import fs from 'fs';
 
-// Argument ကနေ App Idea ကို ယူမယ်၊ မပါရင် Default တစ်ခု ပေးထားမယ်
-const appIdea = process.argv[2] || "Simple Gold Calculator App";
-const githubToken = process.env.MY_GITHUB_TOKEN;
-const geminiKey = process.env.GEMINI_API_KEY;
-
-const octokit = new Octokit({ auth: githubToken });
-
 async function forge() {
-    try {
-        console.log("🚀 Starting Myanmar Forge Engine...");
-        console.log(`💡 Building Idea: ${appIdea}`);
+    console.log("🚀 Running Emergency Manual Build Mode...");
+    
+    // AI မလိုဘဲ HTML code ကို တိုက်ရိုက် ရေးခိုင်းလိုက်တာပါ
+    const manualHTML = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Forge Test App</title>
+        <style>
+            body { font-family: sans-serif; text-align: center; padding: 50px; background: #eef2f3; }
+            .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+            h1 { color: #2c3e50; }
+        </style>
+    </head>
+    <body>
+        <div class="box">
+            <h1>🇲🇲 Myanmar Forge Engine</h1>
+            <p>✅ APK Build Process တကယ်အလုပ်လုပ်ကြောင်း စမ်းသပ်ခြင်း ဖြစ်ပါတယ်။</p>
+            <p>ဒီ App ကို ဖုန်းမှာ မြင်ရပြီဆိုရင် ကျန်တာ အကုန် အဆင်ပြေသွားပါပြီ!</p>
+        </div>
+    </body>
+    </html>`;
 
-        // AI Engine ဆီကနေ အလုပ်လုပ်မယ့် Model Strategy တစ်ခု တောင်းမယ်
-        const model = await getActiveModel(geminiKey);
-        
-        console.log("🤖 AI is generating your App Code, please wait...");
-        
-        const prompt = `Create a single file HTML app for: ${appIdea}. 
-        Requirements:
-        1. Modern UI with CSS.
-        2. Functional logic with JavaScript.
-        3. Entire app in one single HTML file.
-        Return ONLY the raw HTML code, no markdown backticks.`;
-
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        let code = response.text();
-
-        // Markdown ```html စာသားတွေ ပါလာရင် ဖယ်ထုတ်မယ်
-        code = code.replace(/```html|```/g, "").trim();
-
-        // ၁။ Local မှာ index.html အရင် သိမ်းမယ် (Build Step အတွက်)
-        fs.writeFileSync('index.html', code);
-
-        if (fs.existsSync('index.html')) {
-            console.log("✅ Local index.html created successfully.");
-        }
-
-        // ၂။ GitHub Repo ထဲကိုလည်း Update လုပ်ပေးမယ် (Backup အနေနဲ့)
-        try {
-            const { data: user } = await octokit.users.getAuthenticated();
-            await octokit.repos.createOrUpdateFileContents({
-                owner: user.login,
-                repo: 'my-forged-app', 
-                path: 'index.html',
-                message: `Forge Build: ${appIdea}`,
-                content: Buffer.from(code).toString('base64'),
-            });
-            console.log("✅ GitHub Repository updated.");
-        } catch (githubErr) {
-            console.log("⚠️ GitHub Upload skipped or failed, but Local Build will continue.");
-        }
-
-        console.log("🚀 ALL DONE! Proceeding to Android Build phase...");
-        
-    } catch (e) {
-        console.error("🚨 FORGE CRITICAL ERROR:", e.message);
-        // Error ဖြစ်ရင် Workflow ကို ရပ်ပစ်ဖို့ exit code 1 ပေးမယ်
-        process.exit(1);
-    }
+    fs.writeFileSync('index.html', manualHTML);
+    console.log("✅ index.html created successfully without AI.");
+    console.log("🚀 Ready for Android Build!");
 }
 
 forge();
