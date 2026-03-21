@@ -1,18 +1,30 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 export async function getActiveModel(apiKey) {
-    // API Key ရှိမရှိ အရင်စစ်မယ်
     if (!apiKey) throw new Error("API Key is missing in Secrets!");
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    
-    try {
-        console.log("🚀 Forge Engine: Connecting to Gemini 1.5 Flash directly...");
-        // Scan ဖတ်မနေတော့ဘဲ တိုက်ရိုက် Model ကို ခေါ်လိုက်ပါမယ်
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        return model;
-    } catch (e) {
-        console.error("🚨 Connection Error:", e.message);
-        throw new Error("Could not initialize Gemini model.");
-    }
+    return {
+        generateContent: async (prompt) => {
+            // v1beta version ကို URL မှာ အသေထည့်ထားပါတယ်
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error?.message || "Google API Error");
+            }
+
+            return {
+                response: {
+                    text: () => data.candidates[0].content.parts[0].text
+                }
+            };
+        }
+    };
 }
