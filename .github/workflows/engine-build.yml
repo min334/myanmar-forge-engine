@@ -1,4 +1,4 @@
-name: Myanmar Forge Engine Build
+name: Myanmar Forge Engine Build & APK Export
 on:
   workflow_dispatch:
     inputs:
@@ -12,18 +12,40 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+      
       - name: Install Dependencies
         run: npm install
-        
-      - name: Run Forge Engine
-        # ဒီနေရာမှာ Key တွေကို index.js ဆီ တိုက်ရိုက် လှမ်းချိတ်ပေးထားပါတယ်
+
+      - name: Run AI Engine
         run: node index.js "${{ github.event.inputs.app_idea }}"
         env:
-          MY_GITHUB_TOKEN: ${{ secrets.MY_FORGE_TOKEN }}
+          MY_GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+
+      - name: Prepare Android Build
+        run: |
+          mkdir -p dist
+          cp index.html dist/
+          npx cap add android
+          npx cap sync android
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Generated-App-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
