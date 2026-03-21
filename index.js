@@ -15,7 +15,14 @@ async function listAndFindModel() {
         // API ဆီကနေ ရနိုင်တဲ့ model စာရင်းကို တောင်းဆိုခြင်း
         // မှတ်ချက် - SDK version အလိုက် listModels() သို့မဟုတ် အလားတူ function သုံးရပါမယ်
         // လက်ရှိတွင် common models ကို diagnostic အနေနဲ့ အရင်စစ်ဆေးပါမယ်
-        const models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro", "gemini-1.0-pro"];
+        // Preview model တွေနဲ့ နောက်ဆုံးထွက် model နာမည်များ
+const models = [
+    "gemini-1.5-flash-latest",     // Flash နောက်ဆုံး version
+    "gemini-2.0-flash-exp",        // Gemini 2.0 Flash Experimental (Preview)
+    "gemini-1.5-flash-8b-exp-0827", // Flash 8B Preview
+    "gemini-1.5-flash-002",        // Flash Stable New Version
+    "gemini-pro-experimental"      // Pro Preview
+];
         
         let selectedModel = null;
 
