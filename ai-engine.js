@@ -5,7 +5,7 @@ export async function getActiveModel(apiKey) {
 
     try {
         // ၁။ အရင်ဆုံး သုံးလို့ရသမျှ Model List ကို Google ဆီက တောင်းမယ်
-        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+        const listUrl = `https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`;
         const listResponse = await fetch(listUrl);
         const listData = await listResponse.json();
 
