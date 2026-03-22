@@ -19,17 +19,24 @@ jobs:
         run: |
           npm install
           node index.js
-          # www folder မရှိရင် အတင်းဆောက်ခိုင်းပြီး index.html ကို ကူးထည့်ခြင်း
+          # www folder ကို သေချာပေါက်ရှိအောင် လုပ်ခြင်း
           mkdir -p www
-          if [ -d "dist" ]; then cp -r dist/* www/; fi
-          if [ -f "index.html" ]; then cp index.html www/; fi
+          # index.html လက်ရှိနေရာမှာရှိရင် www ထဲကို ကူးမယ်
+          [ -f "index.html" ] && cp index.html www/ || true
+          # manifest.json လက်ရှိနေရာမှာရှိရင် www ထဲကို ကူးမယ်
+          [ -f "manifest.json" ] && cp manifest.json www/ || true
+          # အကယ်၍ dist ထဲမှာ ရှိနေခဲ့ရင်လည်း www ထဲကို ကူးမယ်
+          [ -d "dist" ] && cp -r dist/* www/ || true
+          # Capacitor Sync အတွက် index.html မရှိမဖြစ် ရှိနေရပါမယ်
+          touch www/index.html
 
       - name: ⚡ Capacitor Sync
         run: |
+          # Android platform မရှိသေးရင် ထည့်မယ်၊ ရှိပြီးသားဆိုရင် Sync လုပ်မယ်
           npx cap init "Myanmar Forge" "com.minthitsar.goldcalc" --web-dir www || true
-          npx cap add android || true
-          # Sync မလုပ်ခင် www/index.html ရှိမရှိ ထပ်စစ်ခြင်း
-          touch www/index.html
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
           npx cap sync android
 
       - name: 🚀 Build Android APK
