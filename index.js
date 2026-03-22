@@ -1,31 +1,30 @@
 import fs from 'fs';
 import { getActiveModel } from "./ai-engine.js";
 
-const appIdea = process.argv[2] || "Myanmar Gold Calculator App";
+// AI ကို Control App လုပ်ခိုင်းဖို့ Idea ပေးထားတာပါ
+const appIdea = "A professional mobile controller app with dark theme, for triggering GitHub Actions. It has inputs for GitHub Token, App Idea, and a Start Forge button.";
 const geminiKey = process.env.GEMINI_API_KEY;
 
 async function forge() {
     try {
-        console.log("🚀 Starting Myanmar Forge Engine (Dynamic Mode)...");
-        
-        // အလုပ်လုပ်တဲ့ Model ကို အလိုအလျောက် ရှာမယ်
+        console.log("🚀 Forging the Master Controller App...");
         const model = await getActiveModel(geminiKey);
         
-        console.log("🤖 AI is now generating the app code...");
-        
-        const prompt = `Create a professional single-file HTML app for: ${appIdea}. Return ONLY raw HTML code without markdown.`;
+        // AI ဆီကနေ Controller App ရဲ့ HTML ကို တောင်းမယ်
+        const prompt = `Create a professional single-file HTML for a Mobile Controller. 
+        Theme: Dark Navy and Crimson.
+        Inputs: GitHub Token (password type), App Idea (textarea).
+        Logic: On button click, fetch POST to 'https://api.github.com/repos/min334/myanmar-forge-engine/dispatches' using the token.
+        Return ONLY raw HTML.`;
+
         const result = await model.generateContent(prompt);
         let code = result.response.text().replace(/```html|```/g, "").trim();
 
         fs.writeFileSync('index.html', code);
-        console.log("📦 index.html has been successfully generated!");
-
+        console.log("✅ Control App UI generated successfully!");
     } catch (e) {
-        console.error("🚨 Critical Failure:", e.message);
-        // Build မပျက်သွားအောင် အရေးပေါ် ဖိုင်တစ်ခု ဖန်တီးပေးထားမယ်
-        fs.writeFileSync('index.html', `<html><body><h1>Build Failed</h1><p>${e.message}</p></body></html>`);
-        process.exit(1); 
+        console.error("🚨 Forge Error:", e.message);
+        process.exit(1);
     }
 }
-
 forge();
