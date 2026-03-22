@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 async function forge() {
-    console.log("🚀 Writing Master Controller UI...");
+    console.log("🚀 Creating Master Controller UI...");
 
     const mainUI = `
 <!DOCTYPE html>
@@ -13,18 +13,23 @@ async function forge() {
     <style>
         body { font-family: sans-serif; background: #1a1a2e; color: white; padding: 20px; text-align: center; }
         .container { max-width: 400px; margin: auto; background: #16213e; padding: 25px; border-radius: 15px; border: 1px solid #e94560; }
-        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #0f3460; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border-radius: 8px; border: none; background: #e94560; color: white; font-weight: bold; cursor: pointer; }
-        .log { margin-top: 20px; font-size: 12px; color: #95a5a6; background: #111; padding: 10px; border-radius: 5px; height: 80px; overflow-y: auto; text-align: left; }
+        h1 { color: #e94560; font-size: 24px; margin-bottom: 20px; }
+        label { display: block; margin-top: 15px; color: #add8e6; text-align: left; }
+        input, textarea { width: 100%; padding: 12px; margin-top: 8px; border-radius: 8px; border: none; background: #0f3460; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; margin-top: 25px; border-radius: 8px; border: none; background: #e94560; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #ff4d6d; }
+        .log { margin-top: 20px; font-size: 12px; color: #95a5a6; background: #111; padding: 10px; border-radius: 5px; height: 100px; overflow-y: auto; text-align: left; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🇲🇲 Forge Controller</h1>
-        <input type="password" id="token" placeholder="GitHub Token (ghp_...)">
-        <textarea id="idea" rows="3" placeholder="App Idea (ဥပမာ - ရွှေစျေးတွက်စက်)"></textarea>
+        <label>GitHub Token:</label>
+        <input type="password" id="token" placeholder="ghp_xxxxxxxxxxxx">
+        <label>App Idea:</label>
+        <textarea id="idea" rows="3" placeholder="ဘာ App ထုတ်ချင်သလဲ..."></textarea>
         <button onclick="startForge()">🚀 Start Forge & Build APK</button>
-        <div class="log" id="logs">Ready...</div>
+        <div class="log" id="logs">System: Ready...</div>
     </div>
     <script>
         async function startForge() {
@@ -47,6 +52,6 @@ async function forge() {
 </html>`;
 
     fs.writeFileSync('index.html', mainUI);
-    console.log("✅ index.html is hard-coded. No AI call needed.");
+    console.log("✅ index.html has been generated.");
 }
 forge();
