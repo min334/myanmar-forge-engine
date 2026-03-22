@@ -18,25 +18,25 @@ jobs:
       - name: 🏗️ Install & Build Web
         run: |
           npm install
-          node index.js # Web files (dist/www) ထုတ်လုပ်ခြင်း
+          node index.js
+          # www folder မရှိရင် အတင်းဆောက်ခိုင်းပြီး index.html ကို ကူးထည့်ခြင်း
+          mkdir -p www
+          if [ -d "dist" ]; then cp -r dist/* www/; fi
+          if [ -f "index.html" ]; then cp index.html www/; fi
 
       - name: ⚡ Capacitor Sync
         run: |
           npx cap init "Myanmar Forge" "com.minthitsar.goldcalc" --web-dir www || true
           npx cap add android || true
-          npx cap sync android
-
-      - name: 🤖 AI Auto-Fix (If Sync Fails)
-        if: failure()
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          node fixer.js # Error ရှိလျှင် AI က capacitor.config.json ကို ပြင်ပေးမည်
+          # Sync မလုပ်ခင် www/index.html ရှိမရှိ ထပ်စစ်ခြင်း
+          touch www/index.html
           npx cap sync android
 
       - name: 🚀 Build Android APK
         run: |
-          cd android && ./gradlew assembleDebug
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: 📦 Upload APK
         uses: actions/upload-artifact@v4
