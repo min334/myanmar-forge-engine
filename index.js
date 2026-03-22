@@ -1,9 +1,8 @@
 import fs from 'fs';
 
 async function forge() {
-    console.log("🚀 Creating Source Files for Forge Controller...");
+    console.log("🚀 Generating Controller and Manifest...");
 
-    // HTML UI
     const mainUI = `
 <!DOCTYPE html>
 <html lang="en">
@@ -24,30 +23,30 @@ async function forge() {
         <input type="password" id="token" placeholder="GitHub Token">
         <textarea id="idea" rows="3" placeholder="App Idea..."></textarea>
         <button onclick="startForge()">🚀 Start Build</button>
-        <div id="logs" style="margin-top:15px; font-size:12px; color:#95a5a6;">Ready...</div>
+        <div id="logs" style="margin-top:15px; font-size:12px; color:#95a5a6;">Ready to Forge...</div>
     </div>
     <script>
         async function startForge() {
             const token = document.getElementById('token').value;
             const idea = document.getElementById('idea').value;
-            if(!token || !idea) return alert("ဖြည့်ပါ!");
-            document.getElementById('logs').innerHTML = "⏳ Sending to GitHub...";
+            if(!token || !idea) return alert("Fill fields!");
+            document.getElementById('logs').innerHTML = "⏳ Sending...";
             const res = await fetch('https://api.github.com/repos/min334/myanmar-forge-engine/dispatches', {
                 method: 'POST',
                 headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' },
                 body: JSON.stringify({ event_type: 'forge_build', client_payload: { app_idea: idea } })
             });
-            document.getElementById('logs').innerHTML = res.status === 204 ? "✅ Success!" : "❌ Error: " + res.status;
+            document.getElementById('logs').innerHTML = res.status === 204 ? "✅ Sent!" : "❌ Error: " + res.status;
         }
     </script>
 </body>
 </html>`;
 
-    // manifest.json (Bubblewrap အတွက် အရေးကြီးဆုံးအပိုင်း)
     const manifest = {
         "name": "Myanmar Forge Controller",
         "short_name": "Forge",
-        "start_url": "/index.html",
+        "start_url": "./index.html",
+        "scope": "./",
         "display": "standalone",
         "background_color": "#1a1a2e",
         "theme_color": "#e94560",
@@ -55,13 +54,14 @@ async function forge() {
             {
                 "src": "https://raw.githubusercontent.com/min334/myanmar-forge-engine/main/icon.png",
                 "sizes": "512x512",
-                "type": "image/png"
+                "type": "image/png",
+                "purpose": "any"
             }
         ]
     };
 
     fs.writeFileSync('index.html', mainUI);
     fs.writeFileSync('manifest.json', JSON.stringify(manifest, null, 2));
-    console.log("✅ Files generated successfully.");
+    console.log("✅ Ready for Build.");
 }
 forge();
