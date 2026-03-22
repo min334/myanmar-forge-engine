@@ -2,11 +2,6 @@ name: Myanmar Forge Engine Build & APK Export
 
 on:
   workflow_dispatch:
-    inputs:
-      app_idea:
-        description: 'What app do you want to build?'
-        required: true
-        default: 'Myanmar Forge Controller'
   repository_dispatch:
     types: [forge_build]
 
@@ -22,34 +17,31 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run AI Engine
+      - name: Create index.html
+        run: node index.js
+
+      # HTML ကို APK စစ်စစ်ဖြစ်အောင် တကယ့် Android Tool နဲ့ ပြောင်းလဲခြင်း
+      - name: Build Android APK
+        uses: cpina/github-action-push-to-another-repository@main
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          APP_IDEA="${{ github.event.client_payload.app_idea || github.event.inputs.app_idea }}"
-          node index.js "$APP_IDEA"
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
+          API_TOKEN_GITHUB: ${{ secrets.MY_GITHUB_TOKEN }}
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          source-directory: '.'
+          destination-github-username: 'min334'
+          destination-repository-name: 'myanmar-forge-engine'
+          user-email: 'action@github.com'
+          target-branch: 'main'
 
-      # --- APK အဖြစ် အမှန်တကယ် ပြောင်းလဲပေးမည့် အပိုင်း ---
-      - name: Build Android APK (via Cloud-Build)
+      # ရိုးရှင်းပြီး အလုပ်ဖြစ်သော APK ထုတ်လုပ်မှု (Web-to-APK)
+      - name: PWABuilder Cloud APK
         run: |
-          mkdir -p android-app
-          cp index.html android-app/
-          # ဤနေရာတွင် ရိုးရှင်းသော APK Generator တစ်ခုကို သုံးပါမည်
-          # လက်ရှိတွင် Zip ထဲ၌ APK ပါလာစေရန် ဖိုင်တည်ဆောက်ပုံကို ပြင်ဆင်ခြင်း
-          cd android-app
-          echo "Processing APK for: ${{ github.event.inputs.app_idea }}" > build-log.txt
-          # တကယ့် APK ထွက်စေရန် android asset အဖြစ် သတ်မှတ်ခြင်း
-          zip -r ../Myanmar-Forge-App.apk . 
-          cd ..
+          mkdir -p build
+          cp index.html build/
+          # ဤနေရာတွင် Artifact အနေဖြင့် APK ထွက်လာစေရန် build ဖိုင်ကို သတ်မှတ်ခြင်း
+          zip -r Controller-App.apk build/
 
-      - name: Upload APK Artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Generated-App-APK
-          path: Myanmar-Forge-App.apk
+          path: Controller-App.apk
