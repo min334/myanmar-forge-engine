@@ -1,4 +1,4 @@
-name: Myanmar Forge Engine Build & APK Export
+name: Myanmar Forge Engine APK Build
 
 on:
   workflow_dispatch:
@@ -6,29 +6,32 @@ on:
     types: [forge_build]
 
 jobs:
-  forge_and_build:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          node-version: '20'
+          python-version: '3.10'
 
-      - name: Create index.html
-        run: node index.js
-
-      - name: Package HTML to APK
+      - name: Install Buildozer dependencies
         run: |
-          mkdir -p build
-          cp index.html build/
-          # ဤနေရာတွင် ရိုးရှင်းသော ZIP structure ဖြင့် APK ထွက်လာစေရန် လုပ်ဆောင်ခြင်း
-          zip -r Myanmar-Forge-Controller.apk build/
+          sudo apt update
+          sudo apt install -y git zip unzip autoconf automake libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
+          pip install --user --upgrade buildozer cython virtualenv
 
-      - name: Upload APK
+      - name: Build with Buildozer
+        run: |
+          # index.html ရှိနေတာ သေချာအောင်အရင်လုပ်မယ်
+          node index.js
+          # Buildozer နဲ့ APK ထုတ်မယ် (၅ မိနစ်ခန့် ကြာနိုင်သည်)
+          ~/.local/bin/buildozer -v android debug
+          
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Generated-App-APK
-          path: Myanmar-Forge-Controller.apk
+          name: Myanmar-Forge-Installable-APK
+          path: bin/*.apk
