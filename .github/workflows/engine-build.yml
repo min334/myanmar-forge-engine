@@ -16,29 +16,29 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm' # package.json ရှိရင် cache သုံးလို့ရသည်
 
-      - name: Create Keys & Files
-        run: |
-          node index.js
-          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Min Thitsa Aung, OU=Forge, O=Myanmar, L=Yangon, S=Yangon, C=MM"
+      - name: Install Dependencies
+        run: npm install # package.json ထဲက library တွေအကုန် အလိုအလျောက် သွင်းပေးမည်
 
       - name: Build Attempt 1
         id: try1
         continue-on-error: true
         run: |
+          node index.js
           npm install -g @bubblewrap/cli
-          # yes | ကို သုံးပြီး မေးခွန်းအားလုံးကို အလိုအလျောက် ဖြေခိုင်းခြင်း
+          # Signing Key ဆောက်ခြင်း
+          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Min Thitsa Aung, OU=Forge, O=Myanmar, L=Yangon, S=Yangon, C=MM"
+          # APK Build စတင်ခြင်း
           yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password > error.log 2>&1
 
-      - name: 🤖 AI Auto-Fix
+      - name: 🤖 AI Auto-Fix (Error တက်လျှင်)
         if: steps.try1.outcome == 'failure'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # Package name ကို quote (မျက်တောင်ဖွင့်ပိတ်) ထဲ ထည့်သွင်းခြင်း
-          npm install "@google/generative-ai"
-          node fixer.js
-          echo "🚀 AI Fixed. Retrying..."
+          node fixer.js # AI က error.log ကိုဖတ်ပြီး ကုဒ်ကို ပြန်ပြင်ပေးမည်
+          echo "🚀 AI ပြင်ဆင်ပြီးပါပြီ။ ဒုတိယအကြိမ် Build စတင်နေသည်..."
           yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password || true
 
       - name: Upload APK
