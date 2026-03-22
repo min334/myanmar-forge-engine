@@ -1,9 +1,6 @@
 import fs from 'fs';
 
 async function forge() {
-    console.log("🚀 စက်ရုံမှ ပစ္စည်းထုတ်ရန် ကုန်ကြမ်းများ ပြင်ဆင်နေသည်...");
-
-    // ၁။ ဖုန်းထဲမှာ မြင်ရမည့် Controller UI
     const mainUI = `
 <!DOCTYPE html>
 <html lang="en">
@@ -14,84 +11,132 @@ async function forge() {
     <style>
         body { font-family: sans-serif; background: #1a1a2e; color: white; padding: 20px; text-align: center; }
         .container { max-width: 400px; margin: auto; background: #16213e; padding: 25px; border-radius: 15px; border: 1px solid #e94560; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h1 { color: #e94560; font-size: 24px; margin-bottom: 20px; }
+        h1 { color: #e94560; font-size: 24px; margin: 0 0 20px 0; }
         input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #0f3460; color: white; box-sizing: border-box; font-size: 14px; }
         button { width: 100%; padding: 15px; border-radius: 8px; border: none; background: #e94560; color: white; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px; transition: 0.3s; }
-        button:active { transform: scale(0.98); background: #c62842; }
-        .log-box { margin-top: 20px; font-size: 12px; color: #95a5a6; background: #111; padding: 10px; border-radius: 5px; height: 100px; overflow-y: auto; text-align: left; border: 1px solid #333; }
+        button:disabled { background: #555; cursor: not-allowed; }
+        .status-badge { display: inline-block; padding: 5px 12px; border-radius: 20px; font-size: 12px; margin-top: 10px; background: #34495e; }
+        .log-box { margin-top: 20px; font-size: 13px; color: #ecf0f1; background: #111; padding: 15px; border-radius: 8px; min-height: 80px; text-align: left; border: 1px solid #333; line-height: 1.6; }
+        #downloadArea { margin-top: 15px; display: none; }
+        .download-btn { background: #2ecc71 !important; text-decoration: none; display: block; padding: 15px; border-radius: 8px; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🇲🇲 Forge Engine</h1>
-        <p style="font-size: 13px; color: #bdc3c7;">AI-Powered Mobile App Builder</p>
-        
         <input type="password" id="token" placeholder="GitHub Token (ghp_...)">
-        <textarea id="idea" rows="4" placeholder="ဘယ်လို App မျိုး ထုတ်ချင်တာလဲ ရေးပါ..."></textarea>
+        <textarea id="idea" rows="3" placeholder="App Idea..."></textarea>
         
-        <button onclick="startForge()">🚀 Start Build Engine</button>
+        <button id="buildBtn" onclick="startForge()">🚀 Start Build Engine</button>
         
-        <div class="log-box" id="logs">System: Standing by...</div>
+        <div id="statusInfo" style="display:none;">
+            <div class="status-badge" id="buildStatus">Status: Unknown</div>
+        </div>
+
+        <div class="log-box" id="logs">System: Ready to forge...</div>
+
+        <div id="downloadArea">
+            <a id="apkLink" href="#" class="download-btn">📥 Download Final APK</a>
+        </div>
     </div>
 
     <script>
+        const owner = 'min334';
+        const repo = 'myanmar-forge-engine';
+        let checkInterval;
+
         async function startForge() {
             const token = document.getElementById('token').value;
             const idea = document.getElementById('idea').value;
             const logs = document.getElementById('logs');
-            
-            if(!token || !idea) return alert("ကျေးဇူးပြု၍ အချက်အလက်များ ပြည့်စုံစွာ ဖြည့်ပါ။");
-            
-            logs.innerHTML += "<br>⏳ Connecting to GitHub Engine...";
-            
+            const btn = document.getElementById('buildBtn');
+
+            if(!token || !idea) return alert("Please fill all fields.");
+
+            btn.disabled = true;
+            logs.innerHTML = "⏳ Triggering GitHub Action...";
+
             try {
-                // repository နာမည် မှန်အောင် ပြန်စစ်ပေးပါ (ဥပမာ- min334/myanmar-forge-engine)
-                const res = await fetch('https://api.github.com/repos/min334/myanmar-forge-engine/dispatches', {
+                const res = await fetch(\`https://api.github.com/repos/\${owner}/\${repo}/dispatches\`, {
                     method: 'POST',
-                    headers: { 
-                        'Authorization': 'Bearer ' + token, 
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        event_type: 'forge_build', 
-                        client_payload: { app_idea: idea } 
-                    })
+                    headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github.v3+json' },
+                    body: JSON.stringify({ event_type: 'forge_build', client_payload: { app_idea: idea } })
                 });
 
                 if (res.status === 204) {
-                    logs.innerHTML += "<br><span style='color:#2ecc71;'>✅ Success! APK building started.</span>";
+                    logs.innerHTML = "✅ Action Triggered! Waiting for build to start...";
+                    document.getElementById('statusInfo').style.display = 'block';
+                    // 10 စက္ကန့်နေရင် status စစ်ဖို့ စတင်မယ်
+                    setTimeout(() => startTracking(token), 10000);
                 } else {
-                    const data = await res.json();
-                    logs.innerHTML += "<br><span style='color:#e74c3c;'>❌ Error: " + res.status + " " + (data.message || "") + "</span>";
+                    logs.innerHTML = "❌ Failed: " + res.status;
+                    btn.disabled = false;
                 }
             } catch (e) {
-                logs.innerHTML += "<br><span style='color:#e74c3c;'>🚨 Failed: " + e.message + "</span>";
+                logs.innerHTML = "🚨 Error: " + e.message;
+                btn.disabled = false;
             }
+        }
+
+        async function startTracking(token) {
+            const logs = document.getElementById('logs');
+            const statusBadge = document.getElementById('buildStatus');
+
+            checkInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(\`https://api.github.com/repos/\${owner}/\${repo}/actions/runs?per_page=1\`, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    const data = await res.json();
+                    const run = data.workflow_runs[0];
+
+                    statusBadge.innerText = "Status: " + run.status.toUpperCase();
+                    logs.innerHTML = "🔨 Build is " + run.status + "...";
+
+                    if (run.status === 'completed') {
+                        clearInterval(checkInterval);
+                        if (run.conclusion === 'success') {
+                            logs.innerHTML = "🎉 Build Success! Fetching APK...";
+                            fetchArtifact(token, run.id);
+                        } else {
+                            logs.innerHTML = "❌ Build Failed. Check GitHub Logs.";
+                            document.getElementById('buildBtn').disabled = false;
+                        }
+                    }
+                } catch (e) { console.log(e); }
+            }, 5000);
+        }
+
+        async function fetchArtifact(token, runId) {
+            const logs = document.getElementById('logs');
+            try {
+                const res = await fetch(\`https://api.github.com/repos/\${owner}/\${repo}/actions/runs/\${runId}/artifacts\`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (data.artifacts.length > 0) {
+                    const apk = data.artifacts[0];
+                    // GitHub Artifact က zip အနေနဲ့ ဒေါင်းရမှာပါ
+                    const downloadUrl = \`https://github.com/\${owner}/\${repo}/suites/\${apk.check_suite_id}/artifacts/\${apk.id}\`;
+                    
+                    document.getElementById('apkLink').href = \`https://api.github.com/repos/\${owner}/\${repo}/actions/artifacts/\${apk.id}/zip\`;
+                    // GitHub API artifact download က redirection လိုအပ်လို့ link ကို တိုက်ရိုက်ပေးတာ ပိုကောင်းပါတယ်
+                    document.getElementById('apkLink').onclick = () => {
+                        window.open(\`https://github.com/\${owner}/\${repo}/actions/runs/\${runId}\`, '_blank');
+                        alert("Please download the Artifact from the GitHub page for security reasons.");
+                    };
+                    
+                    document.getElementById('downloadArea').style.display = 'block';
+                    logs.innerHTML = "✅ APK is ready for download!";
+                }
+            } catch (e) { logs.innerHTML = "🚨 Artifact Error: " + e.message; }
         }
     </script>
 </body>
 </html>`;
 
-    // ၂။ APK အတွက် Configuration
-    const manifest = {
-        "name": "Myanmar Forge",
-        "short_name": "Forge",
-        "start_url": "index.html",
-        "display": "standalone",
-        "background_color": "#1a1a2e",
-        "theme_color": "#e94560"
-    };
-
-    // ၃။ Capacitor အတွက် www folder ဆောက်ပြီး သိမ်းဆည်းခြင်း
-    if (!fs.existsSync('www')) {
-        fs.mkdirSync('www');
-    }
-
+    if (!fs.existsSync('www')) fs.mkdirSync('www');
     fs.writeFileSync('www/index.html', mainUI);
-    fs.writeFileSync('www/manifest.json', JSON.stringify(manifest, null, 2));
-    
-    console.log("✅ www/index.html နှင့် www/manifest.json တို့ကို ထုတ်လုပ်ပြီးပါပြီ။");
+    console.log("✅ Controller UI with Live Tracking & Download is ready!");
 }
-
 forge();
