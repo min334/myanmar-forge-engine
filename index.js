@@ -1,8 +1,6 @@
 import fs from 'fs';
 
 async function forge() {
-    console.log("🚀 Generating Controller and Manifest...");
-
     const mainUI = `
 <!DOCTYPE html>
 <html lang="en">
@@ -23,7 +21,7 @@ async function forge() {
         <input type="password" id="token" placeholder="GitHub Token">
         <textarea id="idea" rows="3" placeholder="App Idea..."></textarea>
         <button onclick="startForge()">🚀 Start Build</button>
-        <div id="logs" style="margin-top:15px; font-size:12px; color:#95a5a6;">Ready to Forge...</div>
+        <div id="logs" style="margin-top:15px; font-size:12px; color:#95a5a6;">Ready...</div>
     </div>
     <script>
         async function startForge() {
@@ -45,23 +43,19 @@ async function forge() {
     const manifest = {
         "name": "Myanmar Forge Controller",
         "short_name": "Forge",
-        "start_url": "./index.html",
-        "scope": "./",
+        "start_url": "/index.html",
         "display": "standalone",
         "background_color": "#1a1a2e",
         "theme_color": "#e94560",
-        "icons": [
-            {
-                "src": "https://raw.githubusercontent.com/min334/myanmar-forge-engine/main/icon.png",
-                "sizes": "512x512",
-                "type": "image/png",
-                "purpose": "any"
-            }
-        ]
+        "icons": [{
+            "src": "https://raw.githubusercontent.com/min334/myanmar-forge-engine/main/icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }]
     };
 
     fs.writeFileSync('index.html', mainUI);
     fs.writeFileSync('manifest.json', JSON.stringify(manifest, null, 2));
-    console.log("✅ Ready for Build.");
+    console.log("✅ Sources Generated.");
 }
 forge();
