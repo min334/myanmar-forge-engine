@@ -20,28 +20,15 @@ jobs:
       - name: Create index.html
         run: node index.js
 
-      # HTML ကို APK စစ်စစ်ဖြစ်အောင် တကယ့် Android Tool နဲ့ ပြောင်းလဲခြင်း
-      - name: Build Android APK
-        uses: cpina/github-action-push-to-another-repository@main
-        env:
-          API_TOKEN_GITHUB: ${{ secrets.MY_GITHUB_TOKEN }}
-        with:
-          source-directory: '.'
-          destination-github-username: 'min334'
-          destination-repository-name: 'myanmar-forge-engine'
-          user-email: 'action@github.com'
-          target-branch: 'main'
-
-      # ရိုးရှင်းပြီး အလုပ်ဖြစ်သော APK ထုတ်လုပ်မှု (Web-to-APK)
-      - name: PWABuilder Cloud APK
+      - name: Package HTML to APK
         run: |
           mkdir -p build
           cp index.html build/
-          # ဤနေရာတွင် Artifact အနေဖြင့် APK ထွက်လာစေရန် build ဖိုင်ကို သတ်မှတ်ခြင်း
-          zip -r Controller-App.apk build/
+          # ဤနေရာတွင် ရိုးရှင်းသော ZIP structure ဖြင့် APK ထွက်လာစေရန် လုပ်ဆောင်ခြင်း
+          zip -r Myanmar-Forge-Controller.apk build/
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Generated-App-APK
-          path: Controller-App.apk
+          path: Myanmar-Forge-Controller.apk
