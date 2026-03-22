@@ -33,17 +33,20 @@ jobs:
           # Bubblewrap ၏ မေးခွန်းများကို 'yes |' ဖြင့် အလိုအလျောက် ဖြေကြားခြင်း
           yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password > error.log 2>&1
 
-      - name: 🤖 AI Auto-Fix (Using your Smart Discovery logic)
+      - name: 🤖 AI Auto-Fix & Final Build
         if: steps.try1.outcome == 'failure'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          # ai-engine.js ကို အသုံးပြု၍ Error ပြင်ဆင်ခြင်း
-          node ai-engine.js 
-          echo "🚀 AI ပြင်ဆင်မှု ပြီးဆုံးပါပြီ။ APK ပြန်လည် ထုတ်လုပ်နေသည်..."
-          # Fix ပြီးနောက် ဒုတိယအကြိမ် Build လုပ်ခြင်း
-          yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password || true
-
+          node fixer.js  # <--- ဒီနေရာမှာ ခင်ဗျားရဲ့ ဖိုင်နာမည်နဲ့ တူရပါမယ်
+          if [ -f "twa-manifest.json" ]; then
+            echo "✅ AI repair success. Re-building..."
+            yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password
+          else
+            echo "❌ AI failed to create manifest."
+            exit 1
+          fi
+          
       - name: 📦 Upload APK
         uses: actions/upload-artifact@v4
         with:
