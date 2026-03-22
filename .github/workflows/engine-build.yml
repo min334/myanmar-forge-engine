@@ -17,27 +17,26 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Create Source Files
-        run: node index.js
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Build APK with Auto-Fixer
+      - name: Build Attempt 1
+        id: try1
+        continue-on-error: true
         run: |
+          node index.js
           npm install -g @bubblewrap/cli
-          # Signing Key ကို အတင်းဆောက်ခြင်း
-          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Min Thitsa Aung, OU=Forge, O=Myanmar, L=Yangon, S=Yangon, C=MM"
-          
-          # Bubblewrap ကို ပုံမှန်မဟုတ်ဘဲ အတင်း build လုပ်ခိုင်းခြင်း
-          echo "🚀 APK ထုတ်လုပ်နေပြီ..."
+          yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password > error.log 2>&1
+
+      - name: 🤖 AI Auto-Fix (Error တက်လျှင် ပြင်ဆင်ခြင်း)
+        if: steps.try1.outcome == 'failure'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          npm install @google-generative-ai
+          node fixer.js
+          echo "🚀 AI ပြင်ဆင်ပြီးပါပြီ။ APK ပြန်ထုတ်နေသည်..."
           yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password || true
-          
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Myanmar-Forge-Final-APK
+          name: Forge-AI-Fixed-APK
           path: ./*.apk
