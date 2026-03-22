@@ -16,39 +16,34 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          # cache: 'npm'  <-- ဒီနေရာကို ဖယ်လိုက်ပါပြီ
 
-      - name: Install Dependencies
+      - name: Factory Initializing
         run: |
-          npm install --no-package-lock # lock file မရှိလည်း အလုပ်လုပ်အောင် လုပ်ခြင်း
+          npm install
           npm install -g @bubblewrap/cli
-
-      - name: Create Source Files & Keys
-        run: |
           node index.js
-          # Signing Key မရှိရင် ဆောက်မယ်၊ ရှိရင် ကျော်မယ်
           if [ ! -f "android.keystore" ]; then
             keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Min Thitsa Aung, OU=Forge, O=Myanmar, L=Yangon, S=Yangon, C=MM"
           fi
 
-      - name: Build Attempt 1
+      - name: 🚀 Build Attempt 1
         id: try1
         continue-on-error: true
         run: |
-          # yes | ကို သုံးပြီး မေးခွန်းအားလုံးကို အလိုအလျောက် ကျော်ခြင်း
+          bubblewrap init --manifest=manifest.json --metaData=twa-manifest.json --directory=./ || true
           yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password > error.log 2>&1
 
-      - name: 🤖 AI Auto-Fix (If Build Fails)
+      - name: 🤖 AI Multi-Model Auto-Fix
         if: steps.try1.outcome == 'failure'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           node fixer.js
-          echo "🚀 AI ပြင်ဆင်ပြီးပါပြီ။ ဒုတိယအကြိမ် Build စတင်နေသည်..."
+          echo "🚀 AI မှ ပြင်ဆင်မှုများ ပြုလုပ်ပြီးပါပြီ။ ဒုတိယအကြိမ် ပြန်လည် Build လုပ်နေသည်..."
           yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password || true
 
-      - name: Upload APK
+      - name: 📦 Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Forge-Final-APK
+          name: Myanmar-Forge-Final-APK
           path: ./*.apk
