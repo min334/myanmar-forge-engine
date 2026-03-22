@@ -1,76 +1,53 @@
-import fs from 'fs';
+name: Myanmar Forge Engine APK Build
 
-// ခင်ဗျားပေးထားတဲ့ Smart Scanner Logic
-export async function getActiveModel(apiKey) {
-    if (!apiKey) throw new Error("API Key is missing in Secrets!");
-    console.log("🔍 Scanning for available generative models...");
+on:
+  workflow_dispatch:
 
-    try {
-        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-        const listResponse = await fetch(listUrl);
-        const listData = await listResponse.json();
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-        if (!listResponse.ok) throw new Error(listData.error?.message || "Failed to fetch model list");
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-        const availableModels = listData.models
-            .filter(m => m.supportedGenerationMethods.includes("generateContent"))
-            .map(m => m.name);
+      - name: 🏗️ Factory Initializing
+        run: |
+          npm install
+          npm install -g @bubblewrap/cli
+          node index.js
+          if [ ! -f "android.keystore" ]; then
+            keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Min Thitsa Aung, OU=Forge, O=Myanmar, L=Yangon, S=Yangon, C=MM"
+          fi
 
-        console.log(`📋 Found ${availableModels.length} potential models.`);
+      - name: 🚀 Build Attempt 1
+        id: try1
+        continue-on-error: true
+        run: |
+          # 'yes |' က မေးခွန်းတွေကို အလိုအလျောက် ဖြေပေးမှာပါ
+          yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password > error.log 2>&1
 
-        for (const modelPath of availableModels) {
-            try {
-                console.log(`🧪 Testing: ${modelPath}...`);
-                const testUrl = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${apiKey}`;
-                
-                const testRes = await fetch(testUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
-                });
+      - name: 🤖 AI Auto-Fix & Final Build
+        if: steps.try1.outcome == 'failure'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          node ai-engine.js
+          # ဖိုင်ရှိမရှိ စစ်ဆေးပြီးမှ ဒုတိယအကြိမ် Build လုပ်ခြင်း
+          if [ -f "twa-manifest.json" ]; then
+            echo "✅ AI repair success. Re-building..."
+            yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password
+          else
+            echo "❌ AI failed to create manifest. Check your Gemini API Key."
+            exit 1
+          fi
 
-                if (testRes.ok) {
-                    console.log(`✅ Success! Ready: ${modelPath}`);
-                    return {
-                        generateContent: async (prompt) => {
-                            const res = await fetch(testUrl, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                            });
-                            const data = await res.json();
-                            return { response: { text: () => data.candidates[0].content.parts[0].text } };
-                        }
-                    };
-                }
-            } catch (err) { continue; }
-        }
-    } catch (e) { console.error("🚨 Discovery Error:", e.message); }
-    throw new Error("No active model found.");
-}
-
-// AI Fixer ကို စတင်အသုံးပြုခြင်း
-async function startFix() {
-    try {
-        const errorLog = fs.readFileSync('error.log', 'utf8');
-        if (!errorLog) return;
-
-        const apiKey = process.env.GEMINI_API_KEY;
-        const model = await getActiveModel(apiKey); // Smart Scan လုပ်မည်
-
-        const prompt = `Fix this Bubblewrap error: ${errorLog}. Return ONLY corrected twa-manifest.json content.`;
-        const result = await model.generateContent(prompt);
-        const fixedContent = result.response.text();
-
-        // JSON ကို သေချာထုတ်ယူပြီး သိမ်းခြင်း
-        const jsonMatch = fixedContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-            fs.writeFileSync('twa-manifest.json', jsonMatch[0]);
-            console.log("🛠️ AI has repaired the manifest file.");
-        }
-    } catch (err) {
-        console.log("❌ Fixer failed: " + err.message);
-    }
-}
-
-startFix();
+      - name: 📦 Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Forge-APK
+          path: ./*.apk
