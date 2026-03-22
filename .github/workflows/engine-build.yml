@@ -15,11 +15,13 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Factory Initializing
+      - name: 🏗️ Factory Initializing
         run: |
           npm install
           npm install -g @bubblewrap/cli
-          node index.js
+          # Source ဖိုင်များ ထုတ်လုပ်ခြင်း
+          node index.js 
+          # Signing Key မရှိလျှင် အလိုအလျောက် ဆောက်ခြင်း
           if [ ! -f "android.keystore" ]; then
             keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Min Thitsa Aung, OU=Forge, O=Myanmar, L=Yangon, S=Yangon, C=MM"
           fi
@@ -28,27 +30,22 @@ jobs:
         id: try1
         continue-on-error: true
         run: |
-          # twa-manifest.json မရှိရင် အရင်ဆောက်ခိုင်းခြင်း
-          bubblewrap init --manifest=manifest.json --directory=./ || true
+          # Bubblewrap ၏ မေးခွန်းများကို 'yes |' ဖြင့် အလိုအလျောက် ဖြေကြားခြင်း
           yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password > error.log 2>&1
 
-      - name: 🤖 AI Multi-Model Auto-Fix (Gemini 2.0 Focused)
+      - name: 🤖 AI Auto-Fix (Using your Smart Discovery logic)
         if: steps.try1.outcome == 'failure'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          node fixer.js
-          echo "🚀 AI မှ ပြင်ဆင်ပြီးပါပြီ။ APK ပြန်လည်ထုတ်လုပ်နေသည်..."
-          # AI ပြင်ပေးလိုက်သော ဖိုင်ရှိမရှိ စစ်ဆေးပြီးမှ Build ပြန်လုပ်ခြင်း
-          if [ -f "twa-manifest.json" ]; then
-            yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password || true
-          else
-            echo "AI could not create the manifest file."
-            exit 1
-          fi
+          # ai-engine.js ကို အသုံးပြု၍ Error ပြင်ဆင်ခြင်း
+          node ai-engine.js 
+          echo "🚀 AI ပြင်ဆင်မှု ပြီးဆုံးပါပြီ။ APK ပြန်လည် ထုတ်လုပ်နေသည်..."
+          # Fix ပြီးနောက် ဒုတိယအကြိမ် Build လုပ်ခြင်း
+          yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password || true
 
       - name: 📦 Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Forge-Final-APK
+          name: Myanmar-Forge-APK
           path: ./*.apk
