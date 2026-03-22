@@ -1,6 +1,8 @@
 import fs from 'fs';
 
 async function forge() {
+    console.log("🚀 စက်ပြင်ဆရာ Logic စတင်နေပြီ... ဖိုင်များကို စစ်ဆေးနေသည်...");
+
     const mainUI = `
 <!DOCTYPE html>
 <html lang="en">
@@ -27,21 +29,22 @@ async function forge() {
         async function startForge() {
             const token = document.getElementById('token').value;
             const idea = document.getElementById('idea').value;
-            if(!token || !idea) return alert("Fill fields!");
-            document.getElementById('logs').innerHTML = "⏳ Sending...";
+            if(!token || !idea) return alert("ဖြည့်ပါ!");
+            document.getElementById('logs').innerHTML = "⏳ Sending to Factory...";
             const res = await fetch('https://api.github.com/repos/min334/myanmar-forge-engine/dispatches', {
                 method: 'POST',
                 headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' },
                 body: JSON.stringify({ event_type: 'forge_build', client_payload: { app_idea: idea } })
             });
-            document.getElementById('logs').innerHTML = res.status === 204 ? "✅ Sent!" : "❌ Error: " + res.status;
+            document.getElementById('logs').innerHTML = res.status === 204 ? "✅ Sent to Engine!" : "❌ Error: " + res.status;
         }
     </script>
 </body>
 </html>`;
 
+    // Bubblewrap အတွက် လိုအပ်သော ကုန်ကြမ်းဖိုင်များ (Manifest & TWA Config)
     const manifest = {
-        "name": "Myanmar Forge Controller",
+        "name": "Myanmar Forge",
         "short_name": "Forge",
         "start_url": "/index.html",
         "display": "standalone",
@@ -54,8 +57,29 @@ async function forge() {
         }]
     };
 
+    // Error တက်နေသော twa-manifest.json ကို အလိုအလျောက် ကြိုတင်ဆောက်ပေးခြင်း
+    const twaManifest = {
+        "packageId": "com.minthitsar.forge",
+        "host": "raw.githubusercontent.com",
+        "name": "Myanmar Forge",
+        "launcherName": "Forge",
+        "display": "standalone",
+        "themeColor": "#e94560",
+        "navigationColor": "#1a1a2e",
+        "backgroundColor": "#1a1a2e",
+        "enableNotifications": false,
+        "startUrl": "/index.html",
+        "iconUrl": "https://raw.githubusercontent.com/min334/myanmar-forge-engine/main/icon.png",
+        "splashScreenFadeOutDuration": 300,
+        "signingKey": {
+            "path": "./android.keystore",
+            "alias": "android"
+        }
+    };
+
     fs.writeFileSync('index.html', mainUI);
     fs.writeFileSync('manifest.json', JSON.stringify(manifest, null, 2));
-    console.log("✅ Sources Generated.");
+    fs.writeFileSync('twa-manifest.json', JSON.stringify(twaManifest, null, 2));
+    console.log("✅ ဖိုင်အားလုံး အဆင်သင့်ဖြစ်ပါပြီ။");
 }
 forge();
