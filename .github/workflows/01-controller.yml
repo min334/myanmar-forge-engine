@@ -1,1 +1,26 @@
+name: 01-Build-Controller-App
+on:
+  workflow_dispatch: # ခလုတ်နှိပ်မှ Build မယ်
 
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Build UI
+        run: |
+          npm install
+          node index.js # ဒါက ခုနက Controller UI ကို www ထဲ ထည့်ပေးမှာပါ
+      - name: Capacitor Build
+        run: |
+          npx cap init "Forge Controller" "com.minthitsar.forge" --web-dir www || true
+          [ ! -d "android" ] && npx cap add android
+          npx cap sync android
+          cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Controller-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
