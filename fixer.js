@@ -1,54 +1,76 @@
 import fs from 'fs';
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// ခင်ဗျားပေးထားတဲ့ Smart Scanner Logic
+export async function getActiveModel(apiKey) {
+    if (!apiKey) throw new Error("API Key is missing in Secrets!");
+    console.log("🔍 Scanning for available generative models...");
 
-async function autoFix() {
+    try {
+        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+        const listResponse = await fetch(listUrl);
+        const listData = await listResponse.json();
+
+        if (!listResponse.ok) throw new Error(listData.error?.message || "Failed to fetch model list");
+
+        const availableModels = listData.models
+            .filter(m => m.supportedGenerationMethods.includes("generateContent"))
+            .map(m => m.name);
+
+        console.log(`📋 Found ${availableModels.length} potential models.`);
+
+        for (const modelPath of availableModels) {
+            try {
+                console.log(`🧪 Testing: ${modelPath}...`);
+                const testUrl = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${apiKey}`;
+                
+                const testRes = await fetch(testUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
+                });
+
+                if (testRes.ok) {
+                    console.log(`✅ Success! Ready: ${modelPath}`);
+                    return {
+                        generateContent: async (prompt) => {
+                            const res = await fetch(testUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                            });
+                            const data = await res.json();
+                            return { response: { text: () => data.candidates[0].content.parts[0].text } };
+                        }
+                    };
+                }
+            } catch (err) { continue; }
+        }
+    } catch (e) { console.error("🚨 Discovery Error:", e.message); }
+    throw new Error("No active model found.");
+}
+
+// AI Fixer ကို စတင်အသုံးပြုခြင်း
+async function startFix() {
     try {
         const errorLog = fs.readFileSync('error.log', 'utf8');
         if (!errorLog) return;
 
-        console.log("🔍 Gemini 2.0 နှင့် အခြား Model များကို စမ်းသပ်နေသည်...");
-        
-        // Gemini 2.0 ကို ဦးစားပေး စမ်းသပ်ပါမည်
-        const modelsToTry = [
-            "gemini-2.0-flash-exp", 
-            "gemini-1.5-flash", 
-            "gemini-1.5-pro"
-        ];
-        
-        let success = false;
+        const apiKey = process.env.GEMINI_API_KEY;
+        const model = await getActiveModel(apiKey); // Smart Scan လုပ်မည်
 
-        for (const modelName of modelsToTry) {
-            try {
-                console.log(`📡 Trying ${modelName}...`);
-                const model = genAI.getGenerativeModel({ model: modelName });
-                
-                const prompt = `I am using Bubblewrap to build an APK and got this error: ${errorLog}.
-                Please provide the content for a 'twa-manifest.json' file that fixes this.
-                The JSON should include valid values for: packageId, host, name, launcherName, and startUrl.
-                Return ONLY the raw JSON content.`;
+        const prompt = `Fix this Bubblewrap error: ${errorLog}. Return ONLY corrected twa-manifest.json content.`;
+        const result = await model.generateContent(prompt);
+        const fixedContent = result.response.text();
 
-                const result = await model.generateContent(prompt);
-                const fixedContent = result.response.text().trim();
-
-                // AI ပြန်ပေးတဲ့ content ထဲက JSON ကိုပဲ ဆွဲထုတ်ခြင်း
-                const jsonMatch = fixedContent.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    fs.writeFileSync('twa-manifest.json', jsonMatch[0]);
-                    console.log(`✅ AI (${modelName}) မှ twa-manifest.json ကို ဖန်တီးပေးလိုက်ပါပြီ။`);
-                    success = true;
-                    break; 
-                }
-            } catch (err) {
-                console.log(`⚠️ ${modelName} အဆင်မပြေပါ။`);
-            }
+        // JSON ကို သေချာထုတ်ယူပြီး သိမ်းခြင်း
+        const jsonMatch = fixedContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            fs.writeFileSync('twa-manifest.json', jsonMatch[0]);
+            console.log("🛠️ AI has repaired the manifest file.");
         }
-
-        if (!success) console.log("❌ မည်သည့် Model နှင့်မျှ ချိတ်ဆက်၍မရပါ။ API Key ကို ပြန်စစ်ပေးပါ။");
-
-    } catch (e) {
-        console.log("🚨 Fatal Error: " + e.message);
+    } catch (err) {
+        console.log("❌ Fixer failed: " + err.message);
     }
 }
-autoFix();
+
+startFix();
