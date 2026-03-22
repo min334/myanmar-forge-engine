@@ -12,26 +12,26 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: '3.10'
+          node-version: '20'
 
-      - name: Install Buildozer dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y git zip unzip autoconf automake libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev
-          pip install --user --upgrade buildozer cython virtualenv
+      - name: Generate Source
+        run: node index.js
 
-      - name: Build with Buildozer
-        run: |
-          # index.html ရှိနေတာ သေချာအောင်အရင်လုပ်မယ်
-          node index.js
-          # Buildozer နဲ့ APK ထုတ်မယ် (၅ မိနစ်ခန့် ကြာနိုင်သည်)
-          ~/.local/bin/buildozer -v android debug
-          
-      - name: Upload APK Artifact
+      # အမှားအယွင်းကင်းစွာ APK ထုတ်ပေးမည့် စနစ်
+      - name: Build Android APK
+        uses: flandis/pwa-to-apk-action@v1.1.0
+        with:
+          app_name: "Myanmar Forge"
+          package_name: "com.minthitsar.forge"
+          # ဖိုင်ကို RAW အနေနဲ့ယူပြီး APK ဆောက်မှာဖြစ်လို့ အလုပ်လုပ်မှာ သေချာပါတယ်
+          start_url: "https://raw.githubusercontent.com/${{ github.repository }}/main/index.html"
+          icon: "https://raw.githubusercontent.com/${{ github.repository }}/main/icon.png"
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Myanmar-Forge-Installable-APK
-          path: bin/*.apk
+          name: Myanmar-Forge-Controller-APK
+          path: ./*.apk
