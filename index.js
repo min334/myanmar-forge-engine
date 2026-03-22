@@ -27,7 +27,7 @@ async function forge() {
         <p style="font-size: 13px; color: #bdc3c7;">AI-Powered Mobile App Builder</p>
         
         <input type="password" id="token" placeholder="GitHub Token (ghp_...)">
-        <textarea id="idea" rows="4" placeholder="ဘယ်လို App မျိုး ထုတ်ချင်တာလဲ ရေးပါ... (ဥပမာ - ရွှေစျေးတွက်စက်)"></textarea>
+        <textarea id="idea" rows="4" placeholder="ဘယ်လို App မျိုး ထုတ်ချင်တာလဲ ရေးပါ..."></textarea>
         
         <button onclick="startForge()">🚀 Start Build Engine</button>
         
@@ -42,14 +42,16 @@ async function forge() {
             
             if(!token || !idea) return alert("ကျေးဇူးပြု၍ အချက်အလက်များ ပြည့်စုံစွာ ဖြည့်ပါ။");
             
-            logs.innerHTML += "<br>⏳ GitHub Engine သို့ ချိတ်ဆက်နေသည်...";
+            logs.innerHTML += "<br>⏳ Connecting to GitHub Engine...";
             
             try {
+                // repository နာမည် မှန်အောင် ပြန်စစ်ပေးပါ (ဥပမာ- min334/myanmar-forge-engine)
                 const res = await fetch('https://api.github.com/repos/min334/myanmar-forge-engine/dispatches', {
                     method: 'POST',
                     headers: { 
-                        'Authorization': 'token ' + token, 
-                        'Accept': 'application/vnd.github.v3+json' 
+                        'Authorization': 'Bearer ' + token, 
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({ 
                         event_type: 'forge_build', 
@@ -58,10 +60,10 @@ async function forge() {
                 });
 
                 if (res.status === 204) {
-                    logs.innerHTML += "<br><span style='color:#2ecc71;'>✅ အောင်မြင်သည်။ APK စတင်ထုတ်လုပ်နေပါပြီ။</span>";
-                    logs.innerHTML += "<br>ℹ️ ၅ မိနစ်ခန့်အကြာတွင် GitHub Actions ၌ ဒေါင်းလုတ်ဆွဲပါ။";
+                    logs.innerHTML += "<br><span style='color:#2ecc71;'>✅ Success! APK building started.</span>";
                 } else {
-                    logs.innerHTML += "<br><span style='color:#e74c3c;'>❌ Error: " + res.status + " (Token မှားယွင်းမှု ရှိနိုင်သည်)</span>";
+                    const data = await res.json();
+                    logs.innerHTML += "<br><span style='color:#e74c3c;'>❌ Error: " + res.status + " " + (data.message || "") + "</span>";
                 }
             } catch (e) {
                 logs.innerHTML += "<br><span style='color:#e74c3c;'>🚨 Failed: " + e.message + "</span>";
@@ -71,22 +73,25 @@ async function forge() {
 </body>
 </html>`;
 
-    // ၂။ APK အဖြစ် ပြောင်းလဲရန် လိုအပ်သော Configuration (Manifest)
+    // ၂။ APK အတွက် Configuration
     const manifest = {
         "name": "Myanmar Forge",
         "short_name": "Forge",
         "start_url": "index.html",
         "display": "standalone",
         "background_color": "#1a1a2e",
-        "theme_color": "#e94560",
-        "icons": [] // Screenshot အရ Icon error တက်တတ်၍ ခဏဖယ်ထားသည်
+        "theme_color": "#e94560"
     };
 
-    // ၃။ ဖိုင်များကို သိမ်းဆည်းခြင်း
-    fs.writeFileSync('index.html', mainUI);
-    fs.writeFileSync('manifest.json', JSON.stringify(manifest, null, 2));
+    // ၃။ Capacitor အတွက် www folder ဆောက်ပြီး သိမ်းဆည်းခြင်း
+    if (!fs.existsSync('www')) {
+        fs.mkdirSync('www');
+    }
+
+    fs.writeFileSync('www/index.html', mainUI);
+    fs.writeFileSync('www/manifest.json', JSON.stringify(manifest, null, 2));
     
-    console.log("✅ index.html နှင့် manifest.json တို့ကို အောင်မြင်စွာ ထုတ်လုပ်ပြီးပါပြီ။");
+    console.log("✅ www/index.html နှင့် www/manifest.json တို့ကို ထုတ်လုပ်ပြီးပါပြီ။");
 }
 
 forge();
