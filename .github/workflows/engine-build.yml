@@ -29,12 +29,20 @@ jobs:
       - name: Build APK with Bubblewrap
         run: |
           npm install -g @bubblewrap/cli
-          # ချိန်ညှိချက်များအားလုံးကို အလိုအလျောက် လက်ခံရန် yes ကို သုံးထားသည်
-          yes | bubblewrap init --manifest=manifest.json || true
-          yes | bubblewrap build
+          # မေးခွန်းအားလုံးကို အလိုအလျောက် ဖြေကြားရန် (Non-interactive mode)
+          # Key Store ကို အလိုအလျောက် ဆောက်ခိုင်းထားသည်
+          bubblewrap init --manifest=manifest.json --yes || true
+          
+          # Build မလုပ်ခင် key မရှိလျှင် အလိုအလျောက် ဆောက်ရန်
+          if [ ! -f "android.keystore" ]; then
+            keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Min Thitsa Aung, OU=Forge, O=Myanmar, L=Yangon, S=Yangon, C=MM"
+          fi
+          
+          # Build with key information
+          bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password --yes
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Myanmar-Forge-APK
+          name: Myanmar-Forge-Final-APK
           path: ./*.apk
