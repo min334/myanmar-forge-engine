@@ -1,9 +1,11 @@
 import fs from 'fs';
 
 async function forge() {
-    console.log("🚀 စက်ပြင်ဆရာ Logic: ကုန်ကြမ်းဖိုင်များကို အချောသတ်နေသည်...");
+    console.log("🚀 စက်ရုံမှ ပစ္စည်းထုတ်ရန် ကုန်ကြမ်းများ ပြင်ဆင်နေသည်...");
 
-    const mainUI = `<!DOCTYPE html>
+    // ၁။ ဖုန်းထဲမှာ မြင်ရမည့် Controller UI
+    const mainUI = `
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -11,36 +13,65 @@ async function forge() {
     <title>Myanmar Forge Controller</title>
     <style>
         body { font-family: sans-serif; background: #1a1a2e; color: white; padding: 20px; text-align: center; }
-        .container { max-width: 400px; margin: auto; background: #16213e; padding: 25px; border-radius: 15px; border: 1px solid #e94560; }
-        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #0f3460; color: white; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border-radius: 8px; border: none; background: #e94560; color: white; font-weight: bold; cursor: pointer; }
+        .container { max-width: 400px; margin: auto; background: #16213e; padding: 25px; border-radius: 15px; border: 1px solid #e94560; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { color: #e94560; font-size: 24px; margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #0f3460; color: white; box-sizing: border-box; font-size: 14px; }
+        button { width: 100%; padding: 15px; border-radius: 8px; border: none; background: #e94560; color: white; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px; transition: 0.3s; }
+        button:active { transform: scale(0.98); background: #c62842; }
+        .log-box { margin-top: 20px; font-size: 12px; color: #95a5a6; background: #111; padding: 10px; border-radius: 5px; height: 100px; overflow-y: auto; text-align: left; border: 1px solid #333; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🇲🇲 Forge Controller</h1>
-        <input type="password" id="token" placeholder="GitHub Token">
-        <textarea id="idea" rows="3" placeholder="App Idea..."></textarea>
-        <button onclick="startForge()">🚀 Start Build</button>
-        <div id="logs" style="margin-top:15px; font-size:12px; color:#95a5a6;">Ready...</div>
+        <h1>🇲🇲 Forge Engine</h1>
+        <p style="font-size: 13px; color: #bdc3c7;">AI-Powered Mobile App Builder</p>
+        
+        <input type="password" id="token" placeholder="GitHub Token (ghp_...)">
+        <textarea id="idea" rows="4" placeholder="ဘယ်လို App မျိုး ထုတ်ချင်တာလဲ ရေးပါ... (ဥပမာ - ရွှေစျေးတွက်စက်)"></textarea>
+        
+        <button onclick="startForge()">🚀 Start Build Engine</button>
+        
+        <div class="log-box" id="logs">System: Standing by...</div>
     </div>
+
     <script>
         async function startForge() {
             const token = document.getElementById('token').value;
             const idea = document.getElementById('idea').value;
-            if(!token || !idea) return alert("ဖြည့်ပါ!");
-            document.getElementById('logs').innerHTML = "⏳ Sending...";
-            const res = await fetch('https://api.github.com/repos/min334/myanmar-forge-engine/dispatches', {
-                method: 'POST',
-                headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' },
-                body: JSON.stringify({ event_type: 'forge_build', client_payload: { app_idea: idea } })
-            });
-            document.getElementById('logs').innerHTML = res.status === 204 ? "✅ Sent!" : "❌ Error: " + res.status;
+            const logs = document.getElementById('logs');
+            
+            if(!token || !idea) return alert("ကျေးဇူးပြု၍ အချက်အလက်များ ပြည့်စုံစွာ ဖြည့်ပါ။");
+            
+            logs.innerHTML += "<br>⏳ GitHub Engine သို့ ချိတ်ဆက်နေသည်...";
+            
+            try {
+                const res = await fetch('https://api.github.com/repos/min334/myanmar-forge-engine/dispatches', {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': 'token ' + token, 
+                        'Accept': 'application/vnd.github.v3+json' 
+                    },
+                    body: JSON.stringify({ 
+                        event_type: 'forge_build', 
+                        client_payload: { app_idea: idea } 
+                    })
+                });
+
+                if (res.status === 204) {
+                    logs.innerHTML += "<br><span style='color:#2ecc71;'>✅ အောင်မြင်သည်။ APK စတင်ထုတ်လုပ်နေပါပြီ။</span>";
+                    logs.innerHTML += "<br>ℹ️ ၅ မိနစ်ခန့်အကြာတွင် GitHub Actions ၌ ဒေါင်းလုတ်ဆွဲပါ။";
+                } else {
+                    logs.innerHTML += "<br><span style='color:#e74c3c;'>❌ Error: " + res.status + " (Token မှားယွင်းမှု ရှိနိုင်သည်)</span>";
+                }
+            } catch (e) {
+                logs.innerHTML += "<br><span style='color:#e74c3c;'>🚨 Failed: " + e.message + "</span>";
+            }
         }
     </script>
 </body>
 </html>`;
 
+    // ၂။ APK အဖြစ် ပြောင်းလဲရန် လိုအပ်သော Configuration (Manifest)
     const manifest = {
         "name": "Myanmar Forge",
         "short_name": "Forge",
@@ -48,28 +79,14 @@ async function forge() {
         "display": "standalone",
         "background_color": "#1a1a2e",
         "theme_color": "#e94560",
-        "icons": [{"src": "https://raw.githubusercontent.com/min334/myanmar-forge-engine/main/icon.png", "sizes": "512x512", "type": "image/png"}]
+        "icons": [] // Screenshot အရ Icon error တက်တတ်၍ ခဏဖယ်ထားသည်
     };
 
-    const twaManifest = {
-        "packageId": "com.minthitsar.forge",
-        "host": "raw.githubusercontent.com",
-        "name": "Myanmar Forge",
-        "launcherName": "Forge",
-        "display": "standalone",
-        "themeColor": "#e94560",
-        "navigationColor": "#1a1a2e",
-        "backgroundColor": "#1a1a2e",
-        "enableNotifications": false,
-        "startUrl": "index.html",
-        "iconUrl": "https://raw.githubusercontent.com/min334/myanmar-forge-engine/main/icon.png",
-        "splashScreenFadeOutDuration": 300,
-        "signingKey": { "path": "./android.keystore", "alias": "android" }
-    };
-
+    // ၃။ ဖိုင်များကို သိမ်းဆည်းခြင်း
     fs.writeFileSync('index.html', mainUI);
     fs.writeFileSync('manifest.json', JSON.stringify(manifest, null, 2));
-    fs.writeFileSync('twa-manifest.json', JSON.stringify(twaManifest, null, 2));
-    console.log("✅ ဖိုင်အားလုံး အဆင်သင့်ဖြစ်ပါပြီ။");
+    
+    console.log("✅ index.html နှင့် manifest.json တို့ကို အောင်မြင်စွာ ထုတ်လုပ်ပြီးပါပြီ။");
 }
+
 forge();
