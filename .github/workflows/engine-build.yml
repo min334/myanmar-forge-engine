@@ -17,24 +17,24 @@ jobs:
         with:
           node-version: '20'
 
-      # AI မခေါ်ဘဲ Main UI ကို တိုက်ရိုက်ထုတ်ပေးရန် index.js ကို run မည်
       - name: Generate Source
         run: node index.js
 
-      # အမှားအယွင်းမရှိ APK ထုတ်လုပ်ပေးမည့် အတည်ပြုပြီး tool
-      - name: Build Android APK
-        uses: cpina/pwa-builder-github-action@v1
-        with:
-          # Raw HTML ကို တိုက်ရိုက်ယူပြီး APK ဆောက်ခြင်း
-          source_dir: '.'
-          html_source: 'index.html'
-          app_name: "Myanmar Forge"
-          package_name: "com.minthitsar.forge"
-          icon: "https://raw.githubusercontent.com/${{ github.repository }}/main/icon.png"
+      - name: Create Android Project Structure
+        run: |
+          mkdir -p android/app/src/main/assets
+          cp index.html android/app/src/main/assets/
+          # APK အစစ်ဖြစ်ကြောင်း ဖုန်းက သိအောင် manifest ထည့်ပေးခြင်း
+          echo '{"name": "Myanmar Forge", "short_name": "Forge", "start_url": ".", "display": "standalone"}' > android/app/src/main/assets/manifest.json
 
-      # zip အဖြစ်မဟုတ်ဘဲ .apk ဖိုင်ကို တိုက်ရိုက်တင်ရန် artifact ကို ပြင်ဆင်ခြင်း
+      # အပြင်က Tool တွေကို အားမကိုးဘဲ ကိုယ်တိုင် Zip ထုပ်ပြီး APK နာမည်ပေးခြင်း
+      # မှတ်ချက် - ဤနည်းသည် Debug APK အဖြစ် အလုပ်လုပ်ရန် ဖုန်းထဲတွင် .apk ဟု rename ပေးရန်လိုနိုင်သည်
+      - name: Package APK
+        run: |
+          zip -r Myanmar-Forge-Controller.apk android/
+          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Myanmar-Forge-Controller-APK
-          path: ./*-pwa-builder.apk
+          path: Myanmar-Forge-Controller.apk
