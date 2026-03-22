@@ -17,26 +17,32 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Create Keys & Files
+        run: |
+          node index.js
+          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Min Thitsa Aung, OU=Forge, O=Myanmar, L=Yangon, S=Yangon, C=MM"
+
       - name: Build Attempt 1
         id: try1
         continue-on-error: true
         run: |
-          node index.js
           npm install -g @bubblewrap/cli
+          # yes | ကို သုံးပြီး မေးခွန်းအားလုံးကို အလိုအလျောက် ဖြေခိုင်းခြင်း
           yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password > error.log 2>&1
 
-      - name: 🤖 AI Auto-Fix (Error တက်လျှင် ပြင်ဆင်ခြင်း)
+      - name: 🤖 AI Auto-Fix
         if: steps.try1.outcome == 'failure'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          npm install @google-generative-ai
+          # Package name ကို quote (မျက်တောင်ဖွင့်ပိတ်) ထဲ ထည့်သွင်းခြင်း
+          npm install "@google/generative-ai"
           node fixer.js
-          echo "🚀 AI ပြင်ဆင်ပြီးပါပြီ။ APK ပြန်ထုတ်နေသည်..."
+          echo "🚀 AI Fixed. Retrying..."
           yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password || true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Forge-AI-Fixed-APK
+          name: Forge-Final-APK
           path: ./*.apk
