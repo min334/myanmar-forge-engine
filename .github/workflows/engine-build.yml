@@ -2,8 +2,6 @@ name: Myanmar Forge Engine APK Build
 
 on:
   workflow_dispatch:
-  repository_dispatch:
-    types: [forge_build]
 
 jobs:
   build:
@@ -30,20 +28,27 @@ jobs:
         id: try1
         continue-on-error: true
         run: |
-          bubblewrap init --manifest=manifest.json --metaData=twa-manifest.json --directory=./ || true
+          # twa-manifest.json မရှိရင် အရင်ဆောက်ခိုင်းခြင်း
+          bubblewrap init --manifest=manifest.json --directory=./ || true
           yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password > error.log 2>&1
 
-      - name: 🤖 AI Multi-Model Auto-Fix
+      - name: 🤖 AI Multi-Model Auto-Fix (Gemini 2.0 Focused)
         if: steps.try1.outcome == 'failure'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           node fixer.js
-          echo "🚀 AI မှ ပြင်ဆင်မှုများ ပြုလုပ်ပြီးပါပြီ။ ဒုတိယအကြိမ် ပြန်လည် Build လုပ်နေသည်..."
-          yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password || true
+          echo "🚀 AI မှ ပြင်ဆင်ပြီးပါပြီ။ APK ပြန်လည်ထုတ်လုပ်နေသည်..."
+          # AI ပြင်ပေးလိုက်သော ဖိုင်ရှိမရှိ စစ်ဆေးပြီးမှ Build ပြန်လုပ်ခြင်း
+          if [ -f "twa-manifest.json" ]; then
+            yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password || true
+          else
+            echo "AI could not create the manifest file."
+            exit 1
+          fi
 
-      - name: 📦 Upload APK Artifact
+      - name: 📦 Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Myanmar-Forge-Final-APK
+          name: Forge-Final-APK
           path: ./*.apk
