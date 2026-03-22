@@ -1,53 +1,84 @@
-name: Myanmar Forge Engine APK Build
+import fs from 'fs';
 
-on:
-  workflow_dispatch:
+/**
+ * ကိုမင်းသစ္စာအောင် ပေးထားသော Smart Model Discovery Logic
+ */
+export async function getActiveModel(apiKey) {
+    if (!apiKey) throw new Error("API Key is missing in Secrets!");
+    console.log("🔍 Scanning for available generative models...");
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+    try {
+        const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+        const listResponse = await fetch(listUrl);
+        const listData = await listResponse.json();
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+        if (!listResponse.ok) throw new Error(listData.error?.message || "Failed to fetch model list");
 
-      - name: 🏗️ Factory Initializing
-        run: |
-          npm install
-          npm install -g @bubblewrap/cli
-          node index.js
-          if [ ! -f "android.keystore" ]; then
-            keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Min Thitsa Aung, OU=Forge, O=Myanmar, L=Yangon, S=Yangon, C=MM"
-          fi
+        const availableModels = listData.models
+            .filter(m => m.supportedGenerationMethods.includes("generateContent"))
+            .map(m => m.name);
 
-      - name: 🚀 Build Attempt 1
-        id: try1
-        continue-on-error: true
-        run: |
-          # 'yes |' က မေးခွန်းတွေကို အလိုအလျောက် ဖြေပေးမှာပါ
-          yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password > error.log 2>&1
+        for (const modelPath of availableModels) {
+            try {
+                const testUrl = `https://generativelanguage.googleapis.com/v1beta/${modelPath}:generateContent?key=${apiKey}`;
+                const testRes = await fetch(testUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: "hi" }] }] })
+                });
 
-      - name: 🤖 AI Auto-Fix & Final Build
-        if: steps.try1.outcome == 'failure'
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          node ai-engine.js
-          # ဖိုင်ရှိမရှိ စစ်ဆေးပြီးမှ ဒုတိယအကြိမ် Build လုပ်ခြင်း
-          if [ -f "twa-manifest.json" ]; then
-            echo "✅ AI repair success. Re-building..."
-            yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password
-          else
-            echo "❌ AI failed to create manifest. Check your Gemini API Key."
-            exit 1
-          fi
+                if (testRes.ok) {
+                    console.log(`✅ Ready: ${modelPath}`);
+                    return {
+                        generateContent: async (prompt) => {
+                            const res = await fetch(testUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                            });
+                            const data = await res.json();
+                            return { response: { text: () => data.candidates[0].content.parts[0].text } };
+                        }
+                    };
+                }
+            } catch (err) { continue; }
+        }
+    } catch (e) { console.error("🚨 Discovery Error:", e.message); }
+    throw new Error("No active model found.");
+}
 
-      - name: 📦 Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Forge-APK
-          path: ./*.apk
+/**
+ * Capacitor Configuration များကို ပြင်ဆင်ပေးမည့် Logic
+ */
+async function runFixer() {
+    try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) return;
+
+        console.log("🤖 AI Fixer is running for Capacitor...");
+
+        // Capacitor အတွက် လိုအပ်သော folder နှင့် file များ ရှိမရှိ စစ်ဆေးခြင်း
+        if (!fs.existsSync('./www')) {
+            fs.mkdirSync('./www', { recursive: true });
+            fs.writeFileSync('./www/index.html', '<html><body>Forge Engine Ready</body></html>');
+            console.log("✅ Created missing 'www' directory and index.html");
+        }
+
+        // အကယ်၍ capacitor.config.json မရှိလျှင် အသစ်ဆောက်ပေးခြင်း
+        if (!fs.existsSync('./capacitor.config.json')) {
+            const config = {
+                appId: 'com.minthitsar.goldcalc',
+                appName: 'Myanmar Forge',
+                webDir: 'www',
+                bundledWebRuntime: false
+            };
+            fs.writeFileSync('./capacitor.config.json', JSON.stringify(config, null, 2));
+            console.log("✅ Created capacitor.config.json");
+        }
+
+    } catch (err) {
+        console.log("🚨 Fixer Execution Failed: " + err.message);
+    }
+}
+
+runFixer();
