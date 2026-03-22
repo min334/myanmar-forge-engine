@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Create Source Files
+      - name: Generate Source Files
         run: node index.js
 
       - name: Setup Java
@@ -26,16 +26,15 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Bubblewrap ကို သုံးပြီး Install လုပ်လို့ရမည့် APK စစ်စစ် ထုတ်ခြင်း
       - name: Build APK with Bubblewrap
         run: |
           npm install -g @bubblewrap/cli
-          # Android Project တစ်ခုအဖြစ် ပုံသွင်းခြင်း
-          yes | bubblewrap init --manifest=manifest.json --extracp=index.html || true
+          # ချိန်ညှိချက်များအားလုံးကို အလိုအလျောက် လက်ခံရန် yes ကို သုံးထားသည်
+          yes | bubblewrap init --manifest=manifest.json || true
           yes | bubblewrap build
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Myanmar-Forge-Installable-APK
+          name: Myanmar-Forge-APK
           path: ./*.apk
