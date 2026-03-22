@@ -1,4 +1,4 @@
-name: Myanmar Forge Engine APK Build
+name: Myanmar Forge Engine (Capacitor Build)
 
 on:
   workflow_dispatch:
@@ -15,40 +15,31 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 🏗️ Factory Initializing
+      - name: 🏗️ Install & Build Web
         run: |
           npm install
-          npm install -g @bubblewrap/cli
-          # Source ဖိုင်များ ထုတ်လုပ်ခြင်း
-          node index.js 
-          # Signing Key မရှိလျှင် အလိုအလျောက် ဆောက်ခြင်း
-          if [ ! -f "android.keystore" ]; then
-            keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Min Thitsa Aung, OU=Forge, O=Myanmar, L=Yangon, S=Yangon, C=MM"
-          fi
+          node index.js # Web files (dist/www) ထုတ်လုပ်ခြင်း
 
-      - name: 🚀 Build Attempt 1
-        id: try1
-        continue-on-error: true
+      - name: ⚡ Capacitor Sync
         run: |
-          # Bubblewrap ၏ မေးခွန်းများကို 'yes |' ဖြင့် အလိုအလျောက် ဖြေကြားခြင်း
-          yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password > error.log 2>&1
+          npx cap init "Myanmar Forge" "com.minthitsar.goldcalc" --web-dir www || true
+          npx cap add android || true
+          npx cap sync android
 
-      - name: 🤖 AI Auto-Fix & Final Build
-        if: steps.try1.outcome == 'failure'
+      - name: 🤖 AI Auto-Fix (If Sync Fails)
+        if: failure()
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
-          node fixer.js  # <--- ဒီနေရာမှာ ခင်ဗျားရဲ့ ဖိုင်နာမည်နဲ့ တူရပါမယ်
-          if [ -f "twa-manifest.json" ]; then
-            echo "✅ AI repair success. Re-building..."
-            yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password
-          else
-            echo "❌ AI failed to create manifest."
-            exit 1
-          fi
-          
+          node fixer.js # Error ရှိလျှင် AI က capacitor.config.json ကို ပြင်ပေးမည်
+          npx cap sync android
+
+      - name: 🚀 Build Android APK
+        run: |
+          cd android && ./gradlew assembleDebug
+
       - name: 📦 Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Myanmar-Forge-APK
-          path: ./*.apk
+          name: Forge-Capacitor-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
