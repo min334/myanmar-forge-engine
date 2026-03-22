@@ -17,21 +17,24 @@ jobs:
         with:
           node-version: '20'
 
+      # AI မခေါ်ဘဲ Main UI ကို တိုက်ရိုက်ထုတ်ပေးရန် index.js ကို run မည်
       - name: Generate Source
         run: node index.js
 
-      # အမှားအယွင်းကင်းစွာ APK ထုတ်ပေးမည့် စနစ်
+      # အမှားအယွင်းမရှိ APK ထုတ်လုပ်ပေးမည့် အတည်ပြုပြီး tool
       - name: Build Android APK
-        uses: flandis/pwa-to-apk-action@v1.1.0
+        uses: cpina/pwa-builder-github-action@v1
         with:
+          # Raw HTML ကို တိုက်ရိုက်ယူပြီး APK ဆောက်ခြင်း
+          source_dir: '.'
+          html_source: 'index.html'
           app_name: "Myanmar Forge"
           package_name: "com.minthitsar.forge"
-          # ဖိုင်ကို RAW အနေနဲ့ယူပြီး APK ဆောက်မှာဖြစ်လို့ အလုပ်လုပ်မှာ သေချာပါတယ်
-          start_url: "https://raw.githubusercontent.com/${{ github.repository }}/main/index.html"
           icon: "https://raw.githubusercontent.com/${{ github.repository }}/main/icon.png"
 
+      # zip အဖြစ်မဟုတ်ဘဲ .apk ဖိုင်ကို တိုက်ရိုက်တင်ရန် artifact ကို ပြင်ဆင်ခြင်း
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Myanmar-Forge-Controller-APK
-          path: ./*.apk
+          path: ./*-pwa-builder.apk
