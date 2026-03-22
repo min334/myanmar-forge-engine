@@ -17,24 +17,25 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Generate Source
+      - name: Create Source Files
         run: node index.js
 
-      - name: Create Android Project Structure
-        run: |
-          mkdir -p android/app/src/main/assets
-          cp index.html android/app/src/main/assets/
-          # APK အစစ်ဖြစ်ကြောင်း ဖုန်းက သိအောင် manifest ထည့်ပေးခြင်း
-          echo '{"name": "Myanmar Forge", "short_name": "Forge", "start_url": ".", "display": "standalone"}' > android/app/src/main/assets/manifest.json
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-      # အပြင်က Tool တွေကို အားမကိုးဘဲ ကိုယ်တိုင် Zip ထုပ်ပြီး APK နာမည်ပေးခြင်း
-      # မှတ်ချက် - ဤနည်းသည် Debug APK အဖြစ် အလုပ်လုပ်ရန် ဖုန်းထဲတွင် .apk ဟု rename ပေးရန်လိုနိုင်သည်
-      - name: Package APK
+      # Bubblewrap ကို သုံးပြီး Install လုပ်လို့ရမည့် APK စစ်စစ် ထုတ်ခြင်း
+      - name: Build APK with Bubblewrap
         run: |
-          zip -r Myanmar-Forge-Controller.apk android/
+          npm install -g @bubblewrap/cli
+          # Android Project တစ်ခုအဖြစ် ပုံသွင်းခြင်း
+          yes | bubblewrap init --manifest=manifest.json --extracp=index.html || true
+          yes | bubblewrap build
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Myanmar-Forge-Controller-APK
-          path: Myanmar-Forge-Controller.apk
+          name: Myanmar-Forge-Installable-APK
+          path: ./*.apk
