@@ -1,47 +1,75 @@
-name: Myanmar Forge Engine APK Build
+import fs from 'fs';
 
-on:
-  workflow_dispatch:
-  repository_dispatch:
-    types: [forge_build]
+async function forge() {
+    console.log("🚀 စက်ပြင်ဆရာ Logic: ကုန်ကြမ်းဖိုင်များကို အချောသတ်နေသည်...");
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+    const mainUI = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Myanmar Forge Controller</title>
+    <style>
+        body { font-family: sans-serif; background: #1a1a2e; color: white; padding: 20px; text-align: center; }
+        .container { max-width: 400px; margin: auto; background: #16213e; padding: 25px; border-radius: 15px; border: 1px solid #e94560; }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; background: #0f3460; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; border-radius: 8px; border: none; background: #e94560; color: white; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🇲🇲 Forge Controller</h1>
+        <input type="password" id="token" placeholder="GitHub Token">
+        <textarea id="idea" rows="3" placeholder="App Idea..."></textarea>
+        <button onclick="startForge()">🚀 Start Build</button>
+        <div id="logs" style="margin-top:15px; font-size:12px; color:#95a5a6;">Ready...</div>
+    </div>
+    <script>
+        async function startForge() {
+            const token = document.getElementById('token').value;
+            const idea = document.getElementById('idea').value;
+            if(!token || !idea) return alert("ဖြည့်ပါ!");
+            document.getElementById('logs').innerHTML = "⏳ Sending...";
+            const res = await fetch('https://api.github.com/repos/min334/myanmar-forge-engine/dispatches', {
+                method: 'POST',
+                headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' },
+                body: JSON.stringify({ event_type: 'forge_build', client_payload: { app_idea: idea } })
+            });
+            document.getElementById('logs').innerHTML = res.status === 204 ? "✅ Sent!" : "❌ Error: " + res.status;
+        }
+    </script>
+</body>
+</html>`;
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+    const manifest = {
+        "name": "Myanmar Forge",
+        "short_name": "Forge",
+        "start_url": "index.html",
+        "display": "standalone",
+        "background_color": "#1a1a2e",
+        "theme_color": "#e94560",
+        "icons": [{"src": "https://raw.githubusercontent.com/min334/myanmar-forge-engine/main/icon.png", "sizes": "512x512", "type": "image/png"}]
+    };
 
-      - name: Create Source Files
-        run: node index.js
+    const twaManifest = {
+        "packageId": "com.minthitsar.forge",
+        "host": "raw.githubusercontent.com",
+        "name": "Myanmar Forge",
+        "launcherName": "Forge",
+        "display": "standalone",
+        "themeColor": "#e94560",
+        "navigationColor": "#1a1a2e",
+        "backgroundColor": "#1a1a2e",
+        "enableNotifications": false,
+        "startUrl": "index.html",
+        "iconUrl": "https://raw.githubusercontent.com/min334/myanmar-forge-engine/main/icon.png",
+        "splashScreenFadeOutDuration": 300,
+        "signingKey": { "path": "./android.keystore", "alias": "android" }
+    };
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Forge & Repair Engine (Build APK)
-        run: |
-          npm install -g @bubblewrap/cli
-          
-          # Signing Key ကို အရင်ဆုံး အတင်းဆောက်ခိုင်းခြင်း
-          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Min Thitsa Aung, OU=Forge, O=Myanmar, L=Yangon, S=Yangon, C=MM"
-          
-          # Bubblewrap ကို ပုံမှန်အတိုင်း မဟုတ်ဘဲ twa-manifest ကနေ အတင်းစတင်ခိုင်းခြင်း
-          echo "🚀 APK ထုတ်လုပ်မှု စတင်နေပြီ..."
-          yes | bubblewrap build --signingKeyPath=android.keystore --signingKeyAlias=android --signingKeyPassword=password --signingStorePassword=password || true
-          
-          # ထွက်လာတဲ့ APK ကို အလွယ်တကူ ရှာတွေ့နိုင်အောင် နာမည်ပြောင်းခြင်း
-          mv app-release-signed.apk MyanmarForge_Installer.apk || true
-          
-      - name: Upload Finished Product
-        uses: actions/upload-artifact@v4
-        with:
-          name: Myanmar-Forge-Final-APK
-          path: ./*.apk
+    fs.writeFileSync('index.html', mainUI);
+    fs.writeFileSync('manifest.json', JSON.stringify(manifest, null, 2));
+    fs.writeFileSync('twa-manifest.json', JSON.stringify(twaManifest, null, 2));
+    console.log("✅ ဖိုင်အားလုံး အဆင်သင့်ဖြစ်ပါပြီ။");
+}
+forge();
