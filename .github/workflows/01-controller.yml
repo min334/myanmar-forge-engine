@@ -1,4 +1,4 @@
-name: 02-Forge-New-App
+name: 01-controller
 
 on:
   workflow_dispatch:
@@ -22,7 +22,7 @@ jobs:
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      - name: Forge App with AI
+      - name: Build and Patch with AI
         run: |
           node index.js
           rm -rf android
