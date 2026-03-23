@@ -24,12 +24,11 @@ jobs:
 
       - name: Build and Patch with AI
         run: |
-          node index.js
-          rm -rf android
-          npx cap init "Myanmar Forge Engine" "com.minthitsar.forge" --web-dir www || true
-          npx cap add android
+          node index.js  # ခင်ဗျားရဲ့ မူလ APK Logic ကို Run မယ်
+          # Capacitor initialized ကို index.js က လုပ်ပြီးသားလို့ ယူဆပါတယ်
+          npx cap add android || true
           npx cap copy android
-          node fixer.js
+          node fixer.js  # အိုင်ကွန်နဲ့ Splash ကို အတင်းပြင်ခိုင်းမယ်
           npx cap sync android
 
       - name: Set up Java
