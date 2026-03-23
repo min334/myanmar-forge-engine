@@ -21,31 +21,39 @@ jobs:
 
       - name: Install Dependencies & Build UI
         run: |
-          npm install
-          # Capacitor Assets tool ကို သေချာပေါက်ပါအောင် install လုပ်တာပါ
-          npm install @capacitor/assets @capacitor/cli @capacitor/android
+          # package.json ရှိနေဖို့ သေချာအောင် အရင်လုပ်မယ်
+          npm init -y
+          # လိုအပ်တဲ့ tool တွေကို တစ်ခါတည်း install လုပ်မယ်
+          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
+          # UI logic ကို build လုပ်မယ်
           node index.js
 
       - name: Force Regenerate Android with Assets
         run: |
-          # ၁။ အိုင်ကွန်တွေနဲ့ Splash ကို assets folder ထဲကနေ အရင်ထုတ်မယ်
-          npx @capacitor/assets generate --android
+          # ၁။ အိုင်ကွန်တွေနဲ့ Splash ကို assets folder ထဲကနေ Generate လုပ်မယ်
+          # --asset-path assets ဆိုပြီး လမ်းကြောင်းကို အတိအကျ ညွှန်ပြထားပါတယ်
+          npx @capacitor/assets generate --android --asset-path assets
 
-          # ၂။ ရှိပြီးသား android project folder ကို အကုန်ဖျက်ပြီး အသစ်ပြန်ဆောက်မယ်
-          # (ဒါမှ အိုင်ကွန်အဟောင်းတွေ လုံးဝမကျန်မှာပါ)
+          # ၂။ ရှိပြီးသား android project folder အဟောင်းကို ဖျက်မယ်
           rm -rf android
           
+          # ၃။ Android Project အသစ်ပြန်တည်ဆောက်မယ်
           npx cap init "Forge Controller" "com.minthitsar.forge" --web-dir www || true
           npx cap add android
           
-          # ၃။ UI ကုဒ်တွေနဲ့ အိုင်ကွန်အသစ်တွေကို android project ထဲ ကူးထည့်မယ်
+          # ၄။ ပုံတွေနဲ့ UI ကုဒ်တွေကို android project ထဲကို Sync လုပ်မယ်
           npx cap copy android
           npx cap sync android
+
+          # ၅။ (အရေးကြီး) အိုင်ကွန်တွေ မပြောင်းမှာစိုးလို့ resources ထဲကနေ android res ထဲကို အတင်းကူးထည့်မယ်
+          cp -R resources/android/* android/app/src/main/res/ || true
 
       - name: Build Android APK
         run: |
           cd android
+          # gradlew ကို execute လုပ်ပိုင်ခွင့်ပေးမယ်
           chmod +x gradlew
+          # APK ထုတ်မယ်
           ./gradlew assembleDebug
 
       - name: Upload Artifact
