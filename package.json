@@ -1,17 +1,19 @@
 {
   "name": "myanmar-forge-engine",
+  "version": "1.0.0",
+  "description": "Myanmar Forge Controller App",
+  "main": "index.js",
   "type": "module",
   "scripts": {
-    "build-ui": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "icon-gen": "npx @capacitor/assets generate --android"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.3.0",
-    "@octokit/rest": "^20.0.0",
-    "@capacitor/core": "^5.0.0",
-    "@capacitor/cli": "^5.0.0",
-    "@capacitor/android": "^5.0.0"
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0"
   },
   "devDependencies": {
-  "@capacitor/assets": "^3.0.4"
+    "@capacitor/assets": "^3.0.4"
   }
+}
