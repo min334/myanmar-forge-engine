@@ -25,27 +25,27 @@ jobs:
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
           node index.js
 
-      - name: Force Regenerate Android with Direct Assets
+      - name: Full Force Assets Integration
         run: |
-          # ၁။ အိုင်ကွန်ထုတ်တဲ့ tool ကို error မတက်အောင် ရိုးရိုးပဲ run ခိုင်းမယ်
-          npx @capacitor/assets generate --android || true
+          # ၁။ အပြင်မှာရှိတဲ့ ပုံတွေကို Capacitor Assets tool က သိတဲ့နေရာထဲ အရင်ထည့်မယ်
+          mkdir -p assets
+          cp icon-only.png assets/icon-only.png || true
+          cp splash.png assets/splash.png || true
 
-          # ၂။ Android folder အဟောင်းကို ဖျက်ပြီး အသစ်ဆောက်မယ်
+          # ၂။ ပုံတွေကို Generate လုပ်မယ်
+          npx @capacitor/assets generate --android --asset-path assets || true
+
+          # ၃။ Android Project ကို အသစ်ပြန်ဆောက်မယ်
           rm -rf android
           npx cap init "Forge Controller" "com.minthitsar.forge" --web-dir www || true
           npx cap add android
           npx cap copy android
           
-          # ၃။ (အရေးကြီးဆုံးအချက်) အပြင်မှာရှိတဲ့ ပုံတွေကို အိုင်ကွန်နေရာတွေထဲ အတင်းလိုက်ထည့်မယ်
-          # နာမည်တိုက်ရိုက်ခေါ်သုံးပြီး manual copy လုပ်တာပါ
-          mkdir -p android/app/src/main/res/mipmap-xxxhdpi
-          cp icon-only.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
-          cp icon-only.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png || true
-          
-          # ၄။ Splash Screen အတွက်လည်း အတင်းထည့်မယ်
-          mkdir -p android/app/src/main/res/drawable
-          cp splash.png android/app/src/main/res/drawable/splash.png || true
+          # ၄။ (အရေးကြီးဆုံး) Generate လုပ်ထားတဲ့ ပုံတွေကို Android Project ထဲ အတင်းထည့်မယ်
+          # ဒါက အိုင်ကွန်ရော Splash ရော သေချာပေါက် ပြောင်းစေမှာပါ
+          cp -R resources/android/* android/app/src/main/res/ || true
 
+          # ၅။ Sync ပြန်လုပ်မယ်
           npx cap sync android
 
       - name: Build Android APK
