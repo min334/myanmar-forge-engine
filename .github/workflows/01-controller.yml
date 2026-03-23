@@ -1,56 +1,23 @@
-name: 01-Build-Controller-App
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Install Dependencies & Build UI
+- name: Build & Fix with AI Robot
         run: |
-          # လိုအပ်တဲ့ library တွေကို အရင်သွင်းမယ်
+          # ၁။ UI ကို အရင်ဆောက်မယ်
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          # ခင်ဗျားရဲ့ UI logic (index.js) ကို run မယ်
           node index.js
-
-      - name: Build & Fix with AI Robot
-        run: |
-          # ၁။ Android project ကို အရင်တည်ဆောက်မယ်
+          
+          # ၂။ Android project တည်ဆောက်မယ်
           rm -rf android
-          npx cap init "Forge Controller" "com.minthitsar.forge" --web-dir www || true
+          npx cap init "Myanmar Forge Engine" "com.minthitsar.forge" --web-dir www || true
           npx cap add android
           npx cap copy android
           
-          # ၂။ (အရေးကြီးဆုံးအဆင့်) fixer.js ကိုသုံးပြီး Icon နဲ့ Splash ကို အတင်းလိုက်ပြင်ခိုင်းမယ်
-          # ဒီနေရာမှာ fixer.js က ပုံတွေကို ရှာပြီး Android res folder ထဲ အတင်းထည့်ပေးမှာပါ
+          # ၃။ fixer.js (AI Robot) ကို သုံးပြီး အိုင်ကွန်နဲ့ ပုံတွေကို အတင်းပြင်ခိုင်းမယ်
           node fixer.js
           
-          # ၃။ ပြင်ပြီးသား ပုံတွေကို project ထဲမှာ အတည်ပြုဖို့ sync လုပ်မယ်
           npx cap sync android
 
       - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
-          # Debug APK ထုတ်မယ်
           ./gradlew assembleDebug
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Controller-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
