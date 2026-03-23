@@ -7,20 +7,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Build UI
+
+      - name: Build UI & Install Tools
         run: |
           npm install
-          node index.js # ဒါက ခုနက Controller UI ကို www ထဲ ထည့်ပေးမှာပါ
+          node index.js # ဒါက Controller UI ကို www ထဲ ထည့်ပေးမှာပါ
+
+      # ✨ ဒီအဆင့်က အိုင်ကွန်နဲ့ Splash Screen ကို အလိုအလျောက် ပြောင်းပေးမှာပါ
+      - name: Generate App Assets (Icon & Splash)
+        run: |
+          npm run icon-gen
+
       - name: Capacitor Build
         run: |
+          # Web dir ကို www လို့ သတ်မှတ်ပြီး capacitor ကို စတင်မယ်
           npx cap init "Forge Controller" "com.minthitsar.forge" --web-dir www || true
-          [ ! -d "android" ] && npx cap add android
+          
+          # android folder မရှိရင် ထည့်မယ်
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          
+          # အိုင်ကွန်တွေနဲ့ UI ကုဒ်တွေကို android project ထဲ ကူးထည့်မယ်
           npx cap sync android
+          
+          # Android APK ကို စတင်ထုတ်လုပ်မယ်
           cd android && chmod +x gradlew && ./gradlew assembleDebug
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: Controller-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
