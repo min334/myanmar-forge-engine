@@ -2,22 +2,18 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * ၁။ Image Patching Logic (အိုင်ကွန်နှင့် Splash Screen ကို AI စက်ရုပ်က အတင်းပြင်ပေးမည့်အပိုင်း)
+ * ၁။ Image & Manifest Patching Logic (အိုင်ကွန်နှင့် Splash ပြဿနာဖြေရှင်းရန်)
  */
-function patchAndroidImages() {
-    console.log("🎨 AI Image Patcher is scanning for icons and splash screens...");
+function patchAndroidProject() {
+    console.log("🎨 AI Patcher is deep-scanning Android project...");
     
-    // ပုံတွေ ရှိနိုင်တဲ့နေရာတွေကို လိုက်ရှာမယ်
     const possiblePaths = ['./', './assets/', './assets/assets/'];
-    const filesToFix = ['icon-only.png', 'splash.png'];
     const foundFiles = {};
-
-    filesToFix.forEach(fileName => {
+    ['icon-only.png', 'splash.png'].forEach(fileName => {
         for (const p of possiblePaths) {
             const fullPath = path.join(p, fileName);
             if (fs.existsSync(fullPath)) {
                 foundFiles[fileName] = fullPath;
-                console.log(`✅ Found ${fileName} at ${fullPath}`);
                 break;
             }
         }
@@ -25,27 +21,34 @@ function patchAndroidImages() {
 
     const resPath = 'android/app/src/main/res';
     if (fs.existsSync(resPath)) {
-        // အိုင်ကွန်များကို အစားထိုးခြင်း (Mipmap folders အားလုံးကို scan ဖတ်မယ်)
+        // အိုင်ကွန်များကို အစားထိုးခြင်း
         const mipmapFolders = fs.readdirSync(resPath).filter(f => f.startsWith('mipmap-'));
         mipmapFolders.forEach(folder => {
             if (foundFiles['icon-only.png']) {
-                const iconPath = path.join(resPath, folder, 'ic_launcher.png');
-                const roundIconPath = path.join(resPath, folder, 'ic_launcher_round.png');
-                fs.copyFileSync(foundFiles['icon-only.png'], iconPath);
-                fs.copyFileSync(foundFiles['icon-only.png'], roundIconPath);
+                const names = ['ic_launcher.png', 'ic_launcher_round.png', 'ic_launcher_foreground.png'];
+                names.forEach(name => {
+                    fs.copyFileSync(foundFiles['icon-only.png'], path.join(resPath, folder, name));
+                });
             }
         });
-        console.log("🚀 Icons patched successfully in all densities!");
+
+        // Manifest ထဲမှာ XML အစား PNG ပုံကို တိုက်ရိုက်သုံးဖို့ AI နဲ့ ပြင်မယ်
+        const manifestPath = 'android/app/src/main/AndroidManifest.xml';
+        if (fs.existsSync(manifestPath)) {
+            let manifest = fs.readFileSync(manifestPath, 'utf8');
+            manifest = manifest.replace(/android:icon="[^"]*"/g, 'android:icon="@mipmap/ic_launcher"');
+            manifest = manifest.replace(/android:roundIcon="[^"]*"/g, 'android:roundIcon="@mipmap/ic_launcher_round"');
+            fs.writeFileSync(manifestPath, manifest);
+            console.log("🚀 AndroidManifest.xml Patched Successfully!");
+        }
 
         // Splash Screen ကို အစားထိုးခြင်း
         const drawablePath = path.join(resPath, 'drawable');
         if (!fs.existsSync(drawablePath)) fs.mkdirSync(drawablePath, { recursive: true });
         if (foundFiles['splash.png']) {
             fs.copyFileSync(foundFiles['splash.png'], path.join(drawablePath, 'splash.png'));
-            console.log("🚀 Splash screen patched successfully!");
+            console.log("🚀 Splash screen patched!");
         }
-    } else {
-        console.log("⚠️ Android folder not found yet. Skipping image patch.");
     }
 }
 
@@ -97,15 +100,14 @@ export async function getActiveModel(apiKey) {
 }
 
 /**
- * ၃။ Capacitor Configuration များကို ပြင်ဆင်ပေးမည့် Logic (မူရင်းအတိုင်း)
+ * ၃။ Capacitor နှင့် App Fixer Logic
  */
 async function runFixer() {
     try {
-        // ခင်ဗျားရဲ့ မူလ Config logic များ
+        // Missing directories check
         if (!fs.existsSync('./www')) {
             fs.mkdirSync('./www', { recursive: true });
             fs.writeFileSync('./www/index.html', '<html><body>Forge Engine Ready</body></html>');
-            console.log("✅ Created missing 'www' directory and index.html");
         }
 
         if (!fs.existsSync('./capacitor.config.json')) {
@@ -116,11 +118,10 @@ async function runFixer() {
                 bundledWebRuntime: false
             };
             fs.writeFileSync('./capacitor.config.json', JSON.stringify(config, null, 2));
-            console.log("✅ Created capacitor.config.json");
         }
 
-        // ပုံများကို အလိုအလျောက် ပြင်ဆင်သည့် Function ကို ခေါ်ယူခြင်း
-        patchAndroidImages();
+        // ပုံများအားလုံးကို အတင်းလိုက်ပြင်ခိုင်းခြင်း
+        patchAndroidProject();
 
     } catch (err) {
         console.log("🚨 Fixer Execution Failed: " + err.message);
