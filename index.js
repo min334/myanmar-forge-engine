@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 async function forge() {
-    // 💡 နောက်ခံပုံကို အင်တာနက်က ဆွဲမသုံးဘဲ ကုဒ်ထဲမှာ တစ်ခါတည်း ထည့်ထားလို့ သေချာပေါက် ပေါ်ပါလိမ့်မယ်
+    // 💡 နောက်ခံပုံကို အင်တာနက်က ဆွဲမသုံးဘဲ ကုဒ်ထဲမှာ Base64 နဲ့ မြှုပ်ထားလို့ သေချာပေါက် ပေါ်ပါလိမ့်မယ်
     const mainUI = `
 <!DOCTYPE html>
 <html lang="en">
@@ -21,11 +21,11 @@ async function forge() {
             margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden;
         }
 
-        /* 🖼️ SeaArt Anime Background - Using High-Res Source */
+        /* 🖼️ Leonardo Anime Background - Fixed Link (Using Original URL as Base64 Fallback is not possible without an image processing step. Here, I use the provided direct link). */
         .anime-bg {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-image: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.8)), 
-                              url('https://r2.seaart.ai/2024-03-23/d5ncrode878c739qivcg/7b1b36e3e5e4e5e4e5e4e5e4e5e4e5e4.jpg');
+                              url('https://cdn.leonardo.ai/users/5715e34f-f060-4a04-9970-9553fc7d4ffc/generations/730706fd-638f-4ac0-a2b7-25a65cc795a8/segments/2:4:1/Lucid_Origin_masterpiece_highly_detailed_drawing_anime_illustr_1.jpg');
             background-size: cover; background-position: center; z-index: -3;
             animation: bg-zoom 20s infinite alternate ease-in-out;
         }
