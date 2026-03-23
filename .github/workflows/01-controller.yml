@@ -1,23 +1,51 @@
-- name: Build & Fix with AI Robot
+name: 02-Forge-New-App
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
         run: |
-          # ၁။ UI ကို အရင်ဆောက်မယ်
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Forge App with AI
+        run: |
           node index.js
-          
-          # ၂။ Android project တည်ဆောက်မယ်
           rm -rf android
           npx cap init "Myanmar Forge Engine" "com.minthitsar.forge" --web-dir www || true
           npx cap add android
           npx cap copy android
-          
-          # ၃။ fixer.js (AI Robot) ကို သုံးပြီး အိုင်ကွန်နဲ့ ပုံတွေကို အတင်းပြင်ခိုင်းမယ်
           node fixer.js
-          
           npx cap sync android
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'zulu'
 
       - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: myanmar-forge-engine-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
