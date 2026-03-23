@@ -1,6 +1,6 @@
 name: 01-Build-Controller-App
 on:
-  workflow_dispatch: # ခလုတ်နှိပ်မှ Build မယ်
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,30 +12,35 @@ jobs:
         with:
           node-version: '20'
 
+      # ✨ Java ကို သေချာထည့်ပေးရပါမယ် (ဒါမှ Android Build အောင်မှာပါ)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
       - name: Build UI & Install Tools
         run: |
           npm install
-          node index.js # ဒါက Controller UI ကို www ထဲ ထည့်ပေးမှာပါ
+          node index.js
 
-      # ✨ ဒီအဆင့်က အိုင်ကွန်နဲ့ Splash Screen ကို အလိုအလျောက် ပြောင်းပေးမှာပါ
+      # ✨ Icon ထုတ်တဲ့အခါ Android folder ထဲ ရောက်သွားအောင် --android flag သုံးပါမယ်
       - name: Generate App Assets (Icon & Splash)
         run: |
-          npm run icon-gen
+          npx @capacitor/assets generate --android
 
       - name: Capacitor Build
         run: |
-          # Web dir ကို www လို့ သတ်မှတ်ပြီး capacitor ကို စတင်မယ်
           npx cap init "Forge Controller" "com.minthitsar.forge" --web-dir www || true
           
-          # android folder မရှိရင် ထည့်မယ်
           if [ ! -d "android" ]; then
             npx cap add android
           fi
           
-          # အိုင်ကွန်တွေနဲ့ UI ကုဒ်တွေကို android project ထဲ ကူးထည့်မယ်
+          # UI နဲ့ အိုင်ကွန်အသစ်တွေကို Android ထဲ အတင်းထည့်ခိုင်းတာပါ
+          npx cap copy android
           npx cap sync android
           
-          # Android APK ကို စတင်ထုတ်လုပ်မယ်
           cd android && chmod +x gradlew && ./gradlew assembleDebug
 
       - name: Upload Artifact
