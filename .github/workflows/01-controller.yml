@@ -21,37 +21,32 @@ jobs:
 
       - name: Install Dependencies & Build UI
         run: |
+          # လိုအပ်တဲ့ library တွေကို အရင်သွင်းမယ်
           npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          # ခင်ဗျားရဲ့ UI logic (index.js) ကို run မယ်
           node index.js
 
-      - name: Full Force Assets Integration
+      - name: Build & Fix with AI Robot
         run: |
-          # ၁။ အပြင်မှာရှိတဲ့ ပုံတွေကို Capacitor Assets tool က သိတဲ့နေရာထဲ အရင်ထည့်မယ်
-          mkdir -p assets
-          cp icon-only.png assets/icon-only.png || true
-          cp splash.png assets/splash.png || true
-
-          # ၂။ ပုံတွေကို Generate လုပ်မယ်
-          npx @capacitor/assets generate --android --asset-path assets || true
-
-          # ၃။ Android Project ကို အသစ်ပြန်ဆောက်မယ်
+          # ၁။ Android project ကို အရင်တည်ဆောက်မယ်
           rm -rf android
           npx cap init "Forge Controller" "com.minthitsar.forge" --web-dir www || true
           npx cap add android
           npx cap copy android
           
-          # ၄။ (အရေးကြီးဆုံး) Generate လုပ်ထားတဲ့ ပုံတွေကို Android Project ထဲ အတင်းထည့်မယ်
-          # ဒါက အိုင်ကွန်ရော Splash ရော သေချာပေါက် ပြောင်းစေမှာပါ
-          cp -R resources/android/* android/app/src/main/res/ || true
-
-          # ၅။ Sync ပြန်လုပ်မယ်
+          # ၂။ (အရေးကြီးဆုံးအဆင့်) fixer.js ကိုသုံးပြီး Icon နဲ့ Splash ကို အတင်းလိုက်ပြင်ခိုင်းမယ်
+          # ဒီနေရာမှာ fixer.js က ပုံတွေကို ရှာပြီး Android res folder ထဲ အတင်းထည့်ပေးမှာပါ
+          node fixer.js
+          
+          # ၃။ ပြင်ပြီးသား ပုံတွေကို project ထဲမှာ အတည်ပြုဖို့ sync လုပ်မယ်
           npx cap sync android
 
       - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
+          # Debug APK ထုတ်မယ်
           ./gradlew assembleDebug
 
       - name: Upload Artifact
