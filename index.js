@@ -2,90 +2,96 @@ import fs from 'fs';
 import path from 'path';
 
 /**
- * ၁။ AI UI Forge - Video Background ပါဝင်သော HTML/CSS ကို ဆောက်ခြင်း
+ * ၁။ Deep Image & Manifest Patching Logic
+ * (အိုင်ကွန်ဝါးခြင်းနှင့် Splash Screen မပေါ်ခြင်းကို ဖြေရှင်းရန်)
  */
-function forgeVideoUI() {
-    console.log("🤖 AI UI Forge is creating landing page with video background...");
+function patchAndroidProject() {
+    console.log("🛠️ AI Patcher is executing HD Icon & Splash Fix...");
     
-    // www folder မရှိရင် ဆောက်မယ်
-    if (!fs.existsSync('./www')) {
-        fs.mkdirSync('./www', { recursive: true });
-    }
+    const possiblePaths = ['./', './assets/', './assets/assets/'];
+    const foundFiles = {};
+    
+    // အိုင်ကွန်နှင့် Splash ပုံများကို ရှာဖွေခြင်း
+    ['icon-only.png', 'splash.png'].forEach(fileName => {
+        for (const p of possiblePaths) {
+            const fullPath = path.join(p, fileName);
+            if (fs.existsSync(fullPath)) {
+                foundFiles[fileName] = fullPath;
+                console.log(`✅ Found ${fileName} at ${fullPath}`);
+                break;
+            }
+        }
+    });
 
-    // HTML/CSS Code
-    const uiTemplate = `
-<!DOCTYPE html>
-<html lang="my">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Myanmar Forge Engine</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: sans-serif; overflow: hidden; }
-        
-        /* Video Container */
-        .video-container {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            z-index: -1;
-            overflow: hidden;
+    const resPath = 'android/app/src/main/res';
+    if (fs.existsSync(resPath)) {
+        // (က) XML Adaptive အိုင်ကွန်ဟောင်းများကို အကုန်လိုက်ဖျက်ပစ်ခြင်း
+        const xmlPaths = [
+            'mipmap-anydpi-v26/ic_launcher.xml',
+            'mipmap-anydpi-v26/ic_launcher_round.xml'
+        ];
+        xmlPaths.forEach(xmlFile => {
+            const fullXmlPath = path.join(resPath, xmlFile);
+            if (fs.existsSync(fullXmlPath)) {
+                fs.unlinkSync(fullXmlPath);
+                console.log(`🗑️ Deleted XML Icon: ${xmlFile}`);
+            }
+        });
+
+        // (ခ) Mipmap Folders အားလုံးထဲက PNG တွေကို HD Solid Image နဲ့ အစားထိုးမယ်
+        const mipmapFolders = fs.readdirSync(resPath).filter(f => f.startsWith('mipmap-'));
+        mipmapFolders.forEach(folder => {
+            if (foundFiles['icon-only.png']) {
+                const names = ['ic_launcher.png', 'ic_launcher_round.png', 'ic_launcher_foreground.png'];
+                names.forEach(name => {
+                    const iconTargetPath = path.join(resPath, folder, name);
+                    try {
+                        fs.copyFileSync(foundFiles['icon-only.png'], iconTargetPath);
+                    } catch (err) {
+                        console.error(`🚨 Error copying icon to ${iconTargetPath}: ${err.message}`);
+                    }
+                });
+            }
+        });
+
+        // (ဂ) AndroidManifest.xml ကို PNG သုံးဖို့ အတင်းညွှန်ကြားခြင်း
+        const manifestPath = 'android/app/src/main/AndroidManifest.xml';
+        if (fs.existsSync(manifestPath)) {
+            let manifest = fs.readFileSync(manifestPath, 'utf8');
+            manifest = manifest.replace(/android:icon="[^"]*"/g, 'android:icon="@mipmap/ic_launcher"');
+            manifest = manifest.replace(/android:roundIcon="[^"]*"/g, 'android:roundIcon="@mipmap/ic_launcher_round"');
+            fs.writeFileSync(manifestPath, manifest);
+            console.log("🚀 AndroidManifest.xml Patched to HD PNG mode!");
         }
-        
-        /* Video Source (AI က bg-video.mp4 ကို ရှာသုံးပါလိမ့်မယ်) */
-        #bgVideo {
-            width: 100vw; height: 100vh;
-            object-fit: cover;
+
+        // (ဃ) Splash Screen (Portrait Size) ကို drawable folder ထဲ ထည့်ပေးခြင်း
+        const drawablePath = path.join(resPath, 'drawable');
+        if (!fs.existsSync(drawablePath)) fs.mkdirSync(drawablePath, { recursive: true });
+        if (foundFiles['splash.png']) {
+            try {
+                fs.copyFileSync(foundFiles['splash.png'], path.join(drawablePath, 'splash.png'));
+                console.log("🚀 HD Splash Screen Installed!");
+            } catch (err) {
+                console.error(`🚨 Error copying splash screen: ${err.message}`);
+            }
         }
-        
-        /* Overlay Content */
-        .overlay {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); /* Video အပေါ်မှာ မှောင်အောင် */
-            color: white;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            text-align: center;
-            z-index: 1;
-        }
-        
-        h1 { font-size: 3rem; margin-bottom: 20px; }
-        button {
-            padding: 10px 20px; font-size: 1.2rem;
-            background: transparent; border: 2px solid cyan;
-            color: cyan; cursor: pointer;
-            transition: 0.3s;
-        }
-        button:hover { background: cyan; color: black; }
-    </style>
-</head>
-<body>
-    <div class="video-container">
-        <video autoplay muted loop playsinline id="bgVideo"></video>
-    </div>
-    <div class="overlay">
-        <h1>Myanmar Forge Engine</h1>
-        <button onclick="alert('Starting Calculation...')">Start Calculation</button>
-    </div>
-    <script>
-        // AI Robot က ဗီဒီယိုရှိမရှိ စစ်ဆေးပြီး လမ်းကြောင်းတပ်ဆင်ပေးမယ်
-        const video = document.getElementById('bgVideo');
-        if (navigator.onLine) {
-           // (Optional) အွန်လိုင်းက ဗီဒီယိုကို သုံးချင်ရင်
-           // video.src = "https://example.com/stream/bg-video.mp4";
-        } else {
-           video.src = "bg-video.mp4"; // local file
-        }
-    </script>
-</body>
-</html>
-    `;
-    
-    fs.writeFileSync('./www/index.html', uiTemplate);
-    console.log("✅ HTML/CSS forged successfully.");
+    }
 }
 
-forgeVideoUI();
+/**
+ * ၂။ Main Fixer Function
+ */
+async function runFixer() {
+    try {
+        // Android Project ရှိမရှိ အရင်စစ်မယ်
+        if (fs.existsSync('./android')) {
+            patchAndroidProject();
+        } else {
+            console.log("⚠️ Android project not found. Skipping patching.");
+        }
+    } catch (err) {
+        console.log("🚨 Fixer Error: " + err.message);
+    }
+}
+
+runFixer();
