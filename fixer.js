@@ -7,9 +7,12 @@ import path from 'path';
 function patchAndroidProject() {
     console.log("🎨 AI Patcher is deep-scanning Android project...");
     
+    // ပုံတွေ ရှိနိုင်တဲ့နေရာတွေကို လိုက်ရှာမယ်
     const possiblePaths = ['./', './assets/', './assets/assets/'];
+    const filesToFix = ['icon-only.png', 'splash.png'];
     const foundFiles = {};
-    ['icon-only.png', 'splash.png'].forEach(fileName => {
+
+    filesToFix.forEach(fileName => {
         for (const p of possiblePaths) {
             const fullPath = path.join(p, fileName);
             if (fs.existsSync(fullPath)) {
@@ -21,10 +24,11 @@ function patchAndroidProject() {
 
     const resPath = 'android/app/src/main/res';
     if (fs.existsSync(resPath)) {
-        // အိုင်ကွန်များကို အစားထိုးခြင်း
+        // အိုင်ကွန်များကို အစားထိုးခြင်း (Adaptive icons ကိုပါ ထည့်သွင်းစဉ်းစားပြီး)
         const mipmapFolders = fs.readdirSync(resPath).filter(f => f.startsWith('mipmap-'));
         mipmapFolders.forEach(folder => {
             if (foundFiles['icon-only.png']) {
+                // Adaptive icons တွေမှာ ic_launcher_foreground.png ကို သုံးတာမို့လို့ ဒါကိုပါ အစားထိုးမယ်
                 const names = ['ic_launcher.png', 'ic_launcher_round.png', 'ic_launcher_foreground.png'];
                 names.forEach(name => {
                     fs.copyFileSync(foundFiles['icon-only.png'], path.join(resPath, folder, name));
@@ -32,10 +36,11 @@ function patchAndroidProject() {
             }
         });
 
-        // Manifest ထဲမှာ XML အစား PNG ပုံကို တိုက်ရိုက်သုံးဖို့ AI နဲ့ ပြင်မယ်
+        // Manifest ထဲမှာ အိုင်ကွန်အဟောင်း (xml) သုံးထားတာကို ပုံနဲ့ အတင်းအစားထိုးခိုင်းမယ်
         const manifestPath = 'android/app/src/main/AndroidManifest.xml';
         if (fs.existsSync(manifestPath)) {
             let manifest = fs.readFileSync(manifestPath, 'utf8');
+            // အိုင်ကွန်အဟောင်း xml နေရာမှာ png ကို တိုက်ရိုက်ညွှန်းခိုင်းတာပါ
             manifest = manifest.replace(/android:icon="[^"]*"/g, 'android:icon="@mipmap/ic_launcher"');
             manifest = manifest.replace(/android:roundIcon="[^"]*"/g, 'android:roundIcon="@mipmap/ic_launcher_round"');
             fs.writeFileSync(manifestPath, manifest);
@@ -49,6 +54,8 @@ function patchAndroidProject() {
             fs.copyFileSync(foundFiles['splash.png'], path.join(drawablePath, 'splash.png'));
             console.log("🚀 Splash screen patched!");
         }
+    } else {
+        console.log("⚠️ Android folder not found yet. Skipping deep patch.");
     }
 }
 
