@@ -21,26 +21,29 @@ jobs:
 
       - name: Install Dependencies & Build UI
         run: |
+          # package.json ကို အသစ်ပြန်ဆောက်ပြီး လိုအပ်တာတွေ install လုပ်မယ်
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets
+          # UI Logic ကို Run မယ်
           node index.js
 
       - name: Force Regenerate Android with Assets
         run: |
-          # ၁။ Error တက်စေတဲ့ option ကို မသုံးဘဲ ပုံတွေကို Root ထဲ ခဏထုတ်မယ်
-          cp assets/*.png . || true
-          
-          # ၂။ ပုံတွေကို Generate လုပ်မယ် (Default path ကို သုံးခိုင်းတာပါ)
-          npx @capacitor/assets generate --android
+          # ၁။ ပုံတွေကို Root (အပြင်) မှာပဲ ရှိနေတယ်လို့ သတ်မှတ်ပြီး Generate လုပ်မယ်
+          npx @capacitor/assets generate --android --asset-path .
 
-          # ၃။ Project အဟောင်းဖျက်ပြီး အသစ်ပြန်ဆောက်မယ်
+          # ၂။ Android Project အဟောင်းကို ရှင်းထုတ်မယ်
           rm -rf android
+          
+          # ၃။ Project အသစ်ပြန်ဆောက်မယ်
           npx cap init "Forge Controller" "com.minthitsar.forge" --web-dir www || true
           npx cap add android
           
-          # ၄။ Sync လုပ်ပြီး ပုံတွေကို အတင်းကူးထည့်မယ်
+          # ၄။ Sync လုပ်ပြီး ပုံတွေကို manual force copy လုပ်မယ်
           npx cap copy android
           npx cap sync android
+          
+          # ၅။ အိုင်ကွန်တွေ သေချာပေါက်ပါအောင် res folder ထဲ အတင်းထည့်မယ်
           cp -R resources/android/* android/app/src/main/res/ || true
 
       - name: Build Android APK
