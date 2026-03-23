@@ -24,11 +24,22 @@ jobs:
 
       - name: Build and Patch with AI
         run: |
-          node index.js  # ခင်ဗျားရဲ့ မူလ APK Logic ကို Run မယ်
-          # Capacitor initialized ကို index.js က လုပ်ပြီးသားလို့ ယူဆပါတယ်
-          npx cap add android || true
+          # ၁။ www folder မရှိရင် အတင်းဆောက်ခိုင်းမယ် (Error မတက်အောင်)
+          mkdir -p www
+          echo "<html><body>Myanmar Forge Engine Ready</body></html>" > www/index.html
+          
+          # ၂။ ခင်ဗျားရဲ့ မူလ APK Logic ကို Run မယ်
+          node index.js
+          
+          # ၃။ Android project ကို တည်ဆောက်ပြီး Patch လုပ်မယ်
+          rm -rf android
+          npx cap init "Myanmar Forge Engine" "com.minthitsar.forge" --web-dir www || true
+          npx cap add android
           npx cap copy android
-          node fixer.js  # အိုင်ကွန်နဲ့ Splash ကို အတင်းပြင်ခိုင်းမယ်
+          
+          # ၄။ fixer.js ကို run ပြီး icon ပြင်မယ်
+          node fixer.js
+          
           npx cap sync android
 
       - name: Set up Java
