@@ -7,16 +7,13 @@ async function forge() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Myanmar Forge - Min Thitsar Aung</title>
+    <title>Myanmar Forge - Digital Ghost</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { 
-            --neon-blue: #00f3ff; --dark-bg: #050a10; --panel-bg: rgba(10, 20, 30, 0.85);
+            --neon-blue: #00f3ff; --dark-bg: #050a10; --panel-bg: rgba(10, 20, 30, 0.7);
             --text: #e0f2f1; --accent: #0066ff;
-        }
-        [data-theme="light"] {
-            --dark-bg: #f0f4f8; --panel-bg: rgba(255, 255, 255, 0.9);
-            --text: #1a202c; --neon-blue: #0066ff;
+            --ghost-color: rgba(0, 243, 255, 0.5);
         }
 
         body { 
@@ -25,12 +22,31 @@ async function forge() {
             transition: 0.3s;
         }
 
-        /* Robotic Grid Background */
-        .grid {
+        /* Server Room Background */
+        .server-room {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(var(--neon-blue) 1px, transparent 1px), 
-                              linear-gradient(90deg, var(--neon-blue) 1px, transparent 1px);
-            background-size: 50px 50px; opacity: 0.05; z-index: -1;
+            background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)),
+                              url('https://images.unsplash.com/photo-1518770660439-4636190af475?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80');
+            background-size: cover; background-position: center; opacity: 0.1; z-index: -2;
+        }
+
+        /* Digital Ghost Effect */
+        .ghost-container {
+            position: fixed; top: 10%; left: 50%; transform: translateX(-50%);
+            width: 300px; height: 400px; z-index: -1; opacity: 0.6;
+            filter: drop-shadow(0 0 20px var(--neon-blue));
+            animation: ghost-float 6s infinite alternate ease-in-out;
+        }
+        .ghost-body {
+            width: 100%; height: 100%; background: var(--ghost-color);
+            clip-path: polygon(50% 0%, 100% 20%, 80% 100%, 20% 100%, 0% 20%);
+            position: relative; overflow: hidden;
+        }
+        .ghost-body::before {
+            content: "010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101";
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            color: var(--neon-blue); font-size: 8px; font-family: monospace;
+            line-height: 1; opacity: 0.3; animation: binary-scroll 10s infinite linear;
         }
 
         /* Header */
@@ -43,60 +59,72 @@ async function forge() {
         .forge-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .input-core {
             width: 100%; max-width: 400px; background: var(--panel-bg); 
-            border: 2px solid var(--neon-blue); border-radius: 5px; padding: 20px;
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1); position: relative;
+            border: 1px solid rgba(0, 243, 255, 0.3); border-radius: 10px; padding: 20px;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.1); backdrop-filter: blur(10px);
         }
-        .input-core::before { content: ""; position: absolute; top: -5px; left: -5px; width: 20px; height: 20px; border-top: 3px solid var(--neon-blue); border-left: 3px solid var(--neon-blue); }
 
         textarea { 
-            width: 100%; background: transparent; border: 1px solid rgba(0, 243, 255, 0.3); 
+            width: 100%; background: transparent; border: 1px solid rgba(0, 243, 255, 0.2); 
             color: var(--text); padding: 15px; border-radius: 4px; font-family: sans-serif; resize: none; box-sizing: border-box;
+            transition: 0.3s;
         }
+        textarea:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); }
 
         .forge-btn {
             margin-top: 20px; width: 100%; padding: 15px; background: transparent;
-            border: 2px solid var(--neon-blue); color: var(--neon-blue); font-weight: bold;
-            text-transform: uppercase; cursor: pointer; transition: 0.3s; overflow: hidden; position: relative;
+            border: 1px solid var(--neon-blue); color: var(--neon-blue); font-weight: bold;
+            text-transform: uppercase; cursor: pointer; transition: 0.3s;
+            position: relative; overflow: hidden;
         }
-        .forge-btn:hover { background: var(--neon-blue); color: black; box-shadow: 0 0 30px var(--neon-blue); }
+        .forge-btn:hover { background: rgba(0, 243, 255, 0.1); box-shadow: 0 0 30px var(--neon-blue); }
+        .forge-btn::after {
+            content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: linear-gradient(transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg); transition: 0.5s; opacity: 0;
+        }
+        .forge-btn:hover::after { opacity: 1; transform: translate(100%, 100%) rotate(45deg); }
 
         /* Settings Sidebar */
         .sidebar {
             position: fixed; right: -100%; top: 0; width: 80%; max-width: 300px; height: 100%;
-            background: #0a141e; z-index: 100; transition: 0.4s; padding: 30px; border-left: 1px solid var(--neon-blue);
+            background: rgba(10, 20, 30, 0.95); z-index: 100; transition: 0.4s; padding: 30px; border-left: 1px solid rgba(0, 243, 255, 0.2);
+            backdrop-filter: blur(20px);
         }
         .sidebar.active { right: 0; }
         .sidebar h2 { color: var(--neon-blue); font-size: 18px; margin-bottom: 20px; }
 
-        /* Branding Footer */
-        footer { 
-            padding: 15px; text-align: center; font-size: 10px; opacity: 0.6; letter-spacing: 1px;
-            border-top: 1px solid rgba(0, 243, 255, 0.1);
-        }
-
         /* Status & Logs */
         .status-hub { margin-top: 20px; text-align: left; width: 100%; max-width: 400px; }
         .scan-line { height: 2px; background: var(--neon-blue); width: 0%; transition: 1s; box-shadow: 0 0 10px var(--neon-blue); }
+        .data-explosion { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; }
+
+        @keyframes ghost-float { 0% { transform: translate(-50%, 0); } 100% { transform: translate(-50%, 20px); } }
+        @keyframes binary-scroll { 0% { transform: translateY(0); } 100% { transform: translateY(-50%); } }
+        @keyframes data-particle { 0% { opacity: 1; transform: translate(0,0) scale(1); } 100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0); } }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
 </head>
-<body data-theme="dark">
-    <div class="grid"></div>
+<body>
+    <div class="server-room"></div>
+    <div class="ghost-container">
+        <div class="ghost-body"></div>
+    </div>
+    <canvas class="data-explosion" id="dataExplosion"></canvas>
 
     <header>
-        <div class="logo">MYANMAR FORGE</div>
+        <div class="logo">DIGITAL FORGE</div>
         <i class="fas fa-cog settings-btn" onclick="toggleSettings()"></i>
     </header>
 
     <div class="forge-container">
         <div class="input-core">
-            <p id="label-idea" style="font-size: 12px; margin-bottom: 10px; color: var(--neon-blue);">[ SYSTEM READY: INPUT IDEA ]</p>
-            <textarea id="idea" rows="4" placeholder="Enter App Blueprint..."></textarea>
-            <button class="forge-btn" id="buildBtn" onclick="startForge()">Initiate Forge</button>
+            <p id="label-idea" style="font-size: 12px; margin-bottom: 10px; color: var(--neon-blue); opacity: 0.7;">[ AWAITING DIGITAL BLUEPRINT ]</p>
+            <textarea id="idea" rows="4" placeholder="Inject App Consciousness..."></textarea>
+            <button class="forge-btn" id="buildBtn" onclick="startForge()">Initiate Awakening</button>
         </div>
 
         <div class="status-hub" id="statusBox" style="display:none;">
-            <div id="buildStatus" style="font-size: 12px; margin-bottom: 5px;">SYNCING...</div>
+            <div id="buildStatus" style="font-size: 12px; margin-bottom: 5px;">SYNCING DATA STREAM...</div>
             <div class="scan-line" id="loader"></div>
             <div id="logs" style="font-size: 11px; margin-top: 10px; opacity: 0.7;">Waiting for input command.</div>
         </div>
@@ -110,29 +138,19 @@ async function forge() {
 
     <div class="sidebar" id="sidebar">
         <i class="fas fa-times" style="float: right; cursor: pointer;" onclick="toggleSettings()"></i>
-        <h2>CORE SETTINGS</h2>
+        <h2>CORE CONFIG</h2>
         <div style="margin-bottom: 20px;">
-            <label style="font-size: 12px;">GITHUB TOKEN</label>
-            <input type="password" id="token" style="width: 100%; background: #111; border: 1px solid #333; color: white; padding: 10px; margin-top: 5px;">
+            <label style="font-size: 12px;">GITHUB ACCESS KEY</label>
+            <input type="password" id="token" style="width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.2); color: white; padding: 10px; margin-top: 5px;">
         </div>
-        <div style="margin-bottom: 20px;">
-            <label id="label-lang" style="font-size: 12px;">LANGUAGE</label>
-            <select id="lang" onchange="changeLang()" style="width: 100%; background: #111; color: white; padding: 10px; border: 1px solid #333;">
+        <div>
+            <label id="label-lang" style="font-size: 12px;">INTERFACE LANG</label>
+            <select id="lang" onchange="changeLang()" style="width: 100%; background: rgba(0,0,0,0.5); color: white; padding: 10px; border: 1px solid rgba(0,243,255,0.2);">
                 <option value="en">English</option>
                 <option value="mm">မြန်မာဘာသာ</option>
             </select>
         </div>
-        <div>
-            <label id="label-theme" style="font-size: 12px;">INTERFACE THEME</label>
-            <button onclick="toggleTheme()" style="width: 100%; background: #222; color: white; border: 1px solid #444; padding: 10px; margin-top: 5px; cursor: pointer;">
-                Switch Light/Dark
-            </button>
-        </div>
     </div>
-
-    <footer>
-        ENGINEERED BY <span style="color: var(--neon-blue); font-weight: bold;">MIN THITSAR AUNG</span> | V2.0 ROBOTIC CORE
-    </footer>
 
     <script>
         const owner = 'min334';
@@ -141,26 +159,21 @@ async function forge() {
 
         function toggleSettings() { document.getElementById('sidebar').classList.toggle('active'); }
         
-        function toggleTheme() {
-            const body = document.body;
-            body.dataset.theme = body.dataset.theme === 'dark' ? 'light' : 'dark';
-        }
-
         function changeLang() {
             const l = document.getElementById('lang').value;
-            document.getElementById('label-idea').innerText = l === 'mm' ? '[ စနစ်အဆင်သင့်ဖြစ်ပါပြီ - အိုင်ဒီယာထည့်ပါ ]' : '[ SYSTEM READY: INPUT IDEA ]';
-            document.getElementById('buildBtn').innerText = l === 'mm' ? 'စတင်ထုတ်လုပ်မည်' : 'Initiate Forge';
-            // ... add more translations here
+            document.getElementById('label-idea').innerText = l === 'mm' ? '[ စနစ်အဆင်သင့်ဖြစ်ပါပြီ - အိုင်ဒီယာထည့်ပါ ]' : '[ AWAITING DIGITAL BLUEPRINT ]';
+            document.getElementById('buildBtn').innerText = l === 'mm' ? 'စတင်ထုတ်လုပ်မည်' : 'Initiate Awakening';
         }
 
         async function startForge() {
             const token = document.getElementById('token').value;
             const idea = document.getElementById('idea').value;
-            if(!token) return alert("System Error: Security Token Missing. Check Settings.");
+            if(!token) return alert("System Error: Access Key Missing. Check Config.");
             
             document.getElementById('statusBox').style.display = 'block';
             document.getElementById('loader').style.width = '30%';
             document.getElementById('buildBtn').disabled = true;
+            createExplosion();
 
             const res = await fetch(\`https://api.github.com/repos/\${owner}/\${repo}/dispatches\`, {
                 method: 'POST',
@@ -169,7 +182,7 @@ async function forge() {
             });
 
             if(res.status === 204) {
-                document.getElementById('logs').innerText = "Command Sent. Monitoring Engine...";
+                document.getElementById('logs').innerText = "Command Sent. Monitoring Data Stream...";
                 startTracking(token);
             }
         }
@@ -189,6 +202,7 @@ async function forge() {
                     if(run.conclusion === 'success') {
                         currentRunId = run.id;
                         document.getElementById('downloadArea').style.display = 'block';
+                        createExplosion(); // Success explosion
                     }
                 }
             }, 5000);
@@ -197,12 +211,43 @@ async function forge() {
         function downloadAPK() {
             window.open(\`https://github.com/\${owner}/\${repo}/actions/runs/\${currentRunId}\`, '_blank');
         }
+
+        // Particle Explosion Effect
+        const canvas = document.getElementById('dataExplosion');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        function createExplosion() {
+            const particles = [];
+            for(let i=0; i<50; i++) {
+                particles.push({
+                    x: canvas.width / 2, y: canvas.height / 2,
+                    dx: (Math.random() - 0.5) * 20, dy: (Math.random() - 0.5) * 20,
+                    size: Math.random() * 3,
+                    life: 100
+                });
+            }
+            animateExplosion(particles);
+        }
+
+        function animateExplosion(particles) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, i) => {
+                p.x += p.dx; p.y += p.dy; p.life--;
+                if(p.life > 0) {
+                    ctx.fillStyle = \`rgba(0, 243, 255, \${p.life / 100})\`;
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                } else { particles.splice(i, 1); }
+            });
+            if(particles.length > 0) { requestAnimationFrame(() => animateExplosion(particles)); }
+        }
     </script>
 </body>
 </html>`;
 
     if (!fs.existsSync('www')) fs.mkdirSync('www');
     fs.writeFileSync('www/index.html', mainUI);
-    console.log("✅ Robotic Futuristic UI Deployed!");
+    console.log("✅ Holographic Digital Ghost UI Deployed!");
 }
 forge();
