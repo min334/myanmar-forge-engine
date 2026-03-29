@@ -5,8 +5,13 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "icon-gen": "npx @capacitor/assets generate --android"
+    "start": "echo \"Please add your web development server command here (e.g., vite, react-scripts start)\" && exit 1",
+    "build": "echo \"Please add your web build command here (e.g., vite build, react-scripts build)\" && exit 1",
+    "test": "echo \"Error: no test specified. Consider adding Jest/Vitest for testing.\" && exit 1",
+    "icon-gen": "npx @capacitor/assets generate --android",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",
